@@ -530,3 +530,23 @@ body {
         font-size: 10px;
     }
 }
+
+/* モバイル: ボタン4列レイアウトに切り替え */
+@media (max-width: 600px) {
+    .roster {
+        /* 4列グリッドに変更 */
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        padding: 8px;
+    }
+
+    /* PC版で使っている最下段の位置調整をリセット */
+    .char-btn:nth-child(79) {
+        grid-column-start: auto;
+    }
+
+    .char-btn {
+        font-size: 13px;
+        /* 4列なのでテキストが読みやすいサイズに */
+    }
+}
