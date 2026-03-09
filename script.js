@@ -602,7 +602,36 @@ document.addEventListener('DOMContentLoaded', () => {
             // 初期状態では「全キャラ勝率」のラベルにする
             btn.textContent = "全キャラ勝率";
         } else {
-            btn.textContent = charName;
+            // 画像ファイルのパスを組み立てる
+            const imgPath = `images/${charName}.jpg`;
+
+            // 画像要素を作成して読み込みを試みる
+            const img = document.createElement('img');
+            img.src = imgPath;
+            img.alt = charName;
+            img.className = 'char-img';
+
+            // 画像の読み込みに成功した場合のみ表示する
+            img.addEventListener('load', () => {
+                btn.classList.add('has-image');
+                btn.insertBefore(img, btn.firstChild);
+
+                // ラベルが1行に収まるようフォントサイズを自動調整
+                requestAnimationFrame(() => {
+                    let fontSize = 10;
+                    label.style.fontSize = fontSize + 'px';
+                    while (label.scrollWidth > label.offsetWidth && fontSize > 6) {
+                        fontSize -= 0.1;
+                        label.style.fontSize = fontSize + 'px';
+                    }
+                });
+            });
+
+            // ラベルテキスト
+            const label = document.createElement('span');
+            label.className = 'char-label';
+            label.textContent = charName;
+            btn.appendChild(label);
         }
 
         btn.dataset.id = i; // インデックスをデータ属性に保持

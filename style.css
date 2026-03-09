@@ -153,6 +153,49 @@ body {
     grid-column-start: 3;
 }
 
+/* 画像ありボタン: flex方向を縦に変更 */
+.char-btn.has-image {
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* キャラクター画像 */
+.char-img {
+    width: 100%;
+    flex: 1;
+    object-fit: cover;
+    /* アスペクト比を保ちつつトリミング */
+    object-position: center;
+    /* 画像を中央で切り取る */
+    display: block;
+    min-height: 0;
+    /* flex子要素の縮小を許可 */
+}
+
+/* 画像ありボタンのテキストラベル */
+.char-btn.has-image .char-label {
+    font-size: 10px;
+    padding: 2px 4px;
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+    /* 1行入りに固定 */
+    overflow: hidden;
+    /* はみ出しは非表示 */
+    width: 100%;
+    flex-shrink: 0;
+}
+
+/* 画像なしボタンのラベル（通常のテキスト表示） */
+.char-btn:not(.has-image) .char-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #444444;
+    word-break: break-all;
+    text-align: center;
+}
+
 /* ホバー時のエフェクト */
 .char-btn:hover:not(.settings-btn) {
     transform: scale(1.05);
