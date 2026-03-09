@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スマブラ勝率計算機</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header class="app-header">
+        <h1>スマブラ勝率計算機</h1>
+        <p id="instruction-text">使用キャラクターを選択してください</p>
+    </header>
+
+    <main class="main-content">
+        <!-- キャラクター選択枠（縦7行×横13列、最下段左右2つ空き） -->
+        <div id="roster-view" class="roster-container">
+            <div class="roster-header">
+                <button id="back-btn" class="back-btn hidden">使用キャラ選択に戻る</button>
+            </div>
+            <div id="character-roster" class="roster">
+                <!-- JavaScriptでボタンを生成します -->
+            </div>
+        </div>
+
+        <!-- 勝率計算・記録ページ（初期は非表示） -->
+        <div id="match-view" class="match-container hidden">
+            <div class="match-header">
+                <button id="back-to-roster-btn" class="back-btn">← キャラ選択に戻る</button>
+                <h2 id="vs-text" class="vs-text">マリオ VS ドンキーコング</h2>
+            </div>
+
+            <div class="action-buttons">
+                <button id="win-btn" class="result-btn win-btn">勝ち</button>
+                <button id="loss-btn" class="result-btn loss-btn">負け</button>
+            </div>
+
+            <div class="stats-section">
+                <h3>勝率</h3>
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <span class="stat-label">直近10戦</span>
+                        <span id="rate-10" class="stat-value">--%</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">直近50戦</span>
+                        <span id="rate-50" class="stat-value">--%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="history-section">
+                <div class="history-header">
+                    <h3>対戦履歴 <span id="history-count">(0)</span></h3>
+                    <button id="clear-all-history-btn" class="clear-all-btn">履歴全削除</button>
+                </div>
+                <ul id="history-list" class="history-list">
+                    <!-- Java Scriptで履歴を生成 -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- 全キャラ勝率画面（初期は非表示） -->
+        <div id="ranking-view" class="match-container hidden">
+            <div class="match-header">
+                <button id="back-from-ranking-btn" class="back-btn">← キャラ選択に戻る</button>
+                <h2 class="vs-text">全キャラ勝率ランキング</h2>
+            </div>
+
+            <div class="action-buttons ranking-tabs">
+                <button id="tab-10-btn" class="result-btn win-btn active-tab">直近10戦</button>
+                <button id="tab-50-btn" class="result-btn loss-btn inactive-tab">直近50戦</button>
+            </div>
+
+            <div class="history-section">
+                <ul id="ranking-list" class="history-list ranking-list">
+                    <!-- JavaScriptでランキングを生成 -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- 詳細勝率画面（初期は非表示） -->
+        <div id="detail-view" class="match-container hidden">
+            <div class="match-header">
+                <button id="back-from-detail-btn" class="back-btn">← キャラ選択に戻る</button>
+                <h2 id="detail-char-name" class="vs-text">キャラクター詳細勝率</h2>
+            </div>
+
+            <!-- 総合勝率表示領域 -->
+            <div class="detail-overview">
+                <div class="detail-overview-item">
+                    <span class="detail-overview-label">直近10戦 総合勝率</span>
+                    <span id="detail-rate-10" class="detail-overview-value">--%</span>
+                </div>
+                <div class="detail-overview-item">
+                    <span class="detail-overview-label">直近50戦 総合勝率</span>
+                    <span id="detail-rate-50" class="detail-overview-value">--%</span>
+                </div>
+            </div>
+
+            <div class="history-section">
+                <!-- マッチアップ別ランキング -->
+                <div class="history-header">
+                    <h3>得意な相手ランキング</h3>
+                </div>
+                <ul id="detail-ranking-list" class="history-list ranking-list">
+                    <!-- JavaScriptでランキングを生成 -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- ローディング画面 -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="loader"></div>
+            <p style="font-weight: bold; color: #4a5568;">通信中...</p>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
