@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const rosterContainer = document.getElementById('character-roster');
     const instructionText = document.getElementById('instruction-text');
     const backBtn = document.getElementById('back-btn');
+    const selectedPlayerDisplay = document.getElementById('selected-player-display');
+    const playerNameText = document.getElementById('player-name-text');
 
     const matchView = document.getElementById('match-view');
     const backToRosterBtn = document.getElementById('back-to-roster-btn');
@@ -248,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         instructionText.textContent = '使用キャラクターを選択してください';
         backBtn.classList.add('hidden');
+        selectedPlayerDisplay.classList.add('hidden');
     }
 
     // ---- ランキング処理 ----
@@ -526,6 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
             instructionText.textContent = '使用キャラクターを選択してください';
             currentPhase = 'player';
             backBtn.classList.add('hidden');
+            selectedPlayerDisplay.classList.add('hidden');
         }
     });
 
@@ -650,6 +654,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     instructionText.textContent = '対戦相手のキャラを選択して下さい';
                     currentPhase = 'opponent';
                     backBtn.classList.remove('hidden'); // 戻るボタンを表示
+
+                    // 選択したキャラを表示
+                    playerNameText.textContent = characterList[charId];
+                    selectedPlayerDisplay.classList.remove('hidden');
                 }, 400);
 
             } else if (currentPhase === 'opponent') {
