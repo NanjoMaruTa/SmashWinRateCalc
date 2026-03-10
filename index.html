@@ -4,134 +4,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スマブラ勝率計算機</title>
+    <title>パック開封シミュレータ</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <header class="app-header">
-        <h1>スマブラ勝率計算機</h1>
-        <p id="instruction-text">使用キャラクターを選択してください</p>
-    </header>
+    <div class="app-container">
+        <header class="app-header">
+            <h1 id="appHeaderTitle">パック開封シミュレータ</h1>
+        </header>
 
-    <main class="main-content">
-        <!-- キャラクター選択枠（縦7行×横13列、最下段左右2つ空き） -->
-        <div id="roster-view" class="roster-container">
-            <div class="roster-header">
-                <div id="selected-player-display" class="selected-player-display hidden">
-                    使用キャラ: <span id="player-name-text"></span>
-                </div>
-                <button id="back-btn" class="back-btn hidden">使用キャラ選択に戻る</button>
-            </div>
-            <div id="character-roster" class="roster">
-                <!-- JavaScriptでボタンを生成します -->
-            </div>
+        <!-- Trapezoid background - placed directly under app-container for fixed positioning -->
+        <div class="pack-bg-trapezoid">
+            <div class="setting-name-label" id="settingNameLabel">設定なし</div>
         </div>
 
-        <!-- 勝敗記録画面（初期は非表示） -->
-        <div id="match-view" class="match-container hidden">
-            <div class="match-header">
-                <button id="back-to-roster-btn" class="back-btn">← キャラ選択に戻る</button>
-                <h2 id="vs-text" class="vs-text">マリオ VS ドンキーコング</h2>
+        <main class="main-content">
+            <!-- Session Stats Bar (Fixed below header, initially hidden) -->
+            <div class="session-stats-bar hidden" id="sessionStatsBar">
+                <!-- Injected by JS -->
             </div>
 
-            <div class="action-buttons">
-                <button id="win-btn" class="result-btn win-btn">勝ち</button>
-                <button id="loss-btn" class="result-btn loss-btn">負け</button>
-            </div>
+            <!-- Desired Card Stats Bar (Fixed below session stats, initially hidden) -->
+            <div class="desired-stats-bar hidden" id="desiredStatsBar"></div>
 
-            <div class="stats-section">
-                <h3>勝率</h3>
-                <div class="stats-cards">
-                    <div class="stat-card">
-                        <span class="stat-label">直近10戦</span>
-                        <span id="rate-10" class="stat-value">--%</span>
+            <button id="btnUsage" class="btn-usage">つかいかた</button>
+
+            <div class="pack-container" id="packContainer">
+                <div class="pixel-sparkles"></div>
+                <div class="pack-wrapper">
+                    <!-- 上部の破れる部分 -->
+                    <div class="pack-top" id="packTop">
+                        <img src="images/pack.png" alt="Card Pack Top" class="pack-image-top">
                     </div>
-                    <div class="stat-card">
-                        <span class="stat-label">直近50戦</span>
-                        <span id="rate-50" class="stat-value">--%</span>
+                    <!-- パック本体 -->
+                    <div class="pack-body" id="packBody">
+                        <img src="images/pack.png" alt="Card Pack Body" class="pack-image-body">
                     </div>
                 </div>
             </div>
 
-            <div class="history-section">
-                <div class="history-header">
-                    <h3>対戦履歴 <span id="history-count">(0)</span></h3>
-                    <button id="clear-all-history-btn" class="clear-all-btn">履歴全削除</button>
+            <div class="controls-container" id="controlsContainer">
+                <div class="primary-actions">
+                    <button class="btn-primary" id="btnOpen1">
+                        <span class="btn-text">1パック開封</span>
+                    </button>
+                    <button class="btn-primary" id="btnOpen10">
+                        <span class="btn-text">10パック開封</span>
+                    </button>
                 </div>
-                <ul id="history-list" class="history-list">
-                    <!-- Java Scriptで履歴を生成 -->
+
+                <div class="secondary-actions">
+                    <button class="btn-secondary" id="btnProb">確率設定</button>
+                    <button class="btn-secondary" id="btnCount">レアリティ収録数</button>
+                </div>
+            </div>
+
+            <!-- Card Reveal Screen (Hidden by default) -->
+            <div class="card-reveal-screen hidden" id="cardRevealScreen">
+                <div class="cards-grid" id="cardsGrid">
+                    <!-- Cards will be injected here via JS -->
+                </div>
+                <div class="reveal-controls">
+                    <button id="btnReopen">もう一度開封する</button>
+                    <button id="btnBackToHome">ホームに戻る</button>
+                </div>
+            </div>
+
+            <!-- Rarity Probability Settings (Existing) -->
+            <div class="settings-screen hidden" id="settingsScreen">
+                <h2>確率設定</h2>
+
+                <div class="setting-item">
+                    <label for="probInput">6枚封入 (%):</label>
+                    <input type="number" id="probInput" min="0" max="100" step="0.1" value="8">
+                </div>
+                <div class="setting-item">
+                    <label for="godProbInput">レア封入 (%):</label>
+                    <input type="number" id="godProbInput" min="0" max="100" step="0.01" value="0.05">
+                </div>
+
+                <div class="rarity-settings-wrapper">
+                    <div class="settings-actions">
+                        <button class="btn-secondary btn-preset" id="btnPresets">プリセット</button>
+                    </div>
+
+                    <!-- Background Color Picker (Test) -->
+                    <div class="bg-color-picker-section">
+                        <label for="bgColorInput">パックカラー:</label>
+                        <input type="color" id="bgColorInput" value="#d35cf7">
+                        <button class="btn-secondary" id="btnResetBgColor">リセット</button>
+                    </div>
+
+                    <!-- Dynamic Inputs Container for Probabilities -->
+                    <div id="raritySettingsContainer" class="rarity-settings-container">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button class="btn-secondary" id="btnCancelSettings">キャンセル</button>
+                    <button class="btn-primary" id="btnSaveSettings">保存</button>
+                </div>
+            </div>
+
+            <!-- Rarity Count Settings (New) -->
+            <div class="settings-screen hidden" id="countSettingsScreen">
+                <h2>レアリティ収録数設定</h2>
+                <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">
+                    各レアリティの全収録数を設定してください。<br>数字は半角で、カンマ(,)で区切って入力してください。</p>
+
+                <div class="rarity-settings-wrapper">
+                    <!-- Dynamic Inputs Container for Counts -->
+                    <div id="countSettingsContainer" class="rarity-settings-container">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button class="btn-secondary" id="btnCancelCountSettings">キャンセル</button>
+                    <button class="btn-primary" id="btnSaveCountSettings">保存</button>
+                </div>
+            </div>
+            <!-- Preset Modal -->
+            <div class="preset-modal hidden" id="presetModal">
+                <div class="preset-modal-content">
+                    <h3>プリセット管理</h3>
+                    <div class="preset-actions">
+                        <input type="text" id="newPresetName" placeholder="プリセット名を入力">
+                        <button class="btn-primary" id="btnSaveNewPreset">新規保存</button>
+                    </div>
+                    <ul class="preset-list" id="presetList">
+                        <!-- Presets injected here -->
+                    </ul>
+                    <button class="btn-secondary" id="btnClosePresets">閉じる</button>
+                </div>
+                <!-- Confirm Modal -->
+                <div class="preset-modal hidden" id="confirmModal">
+                    <div class="preset-modal-content confirm-modal-content">
+                        <h3 id="confirmMessage">本当に削除しますか？</h3>
+                        <div class="confirm-actions">
+                            <button class="btn-secondary" id="btnConfirmCancel">キャンセル</button>
+                            <button class="btn-primary btn-danger" id="btnConfirmOk">削除する</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Usage Modal -->
+    <div class="usage-modal hidden" id="usageModal">
+        <div class="usage-content">
+            <button class="close-modal" id="btnCloseUsage">×</button>
+            <h2>つかいかた</h2>
+
+            <div class="usage-tabs">
+                <button class="tab-btn active" data-tab="tabHome">ホーム画面</button>
+                <button class="tab-btn" data-tab="tabPack">パック開封</button>
+                <button class="tab-btn" data-tab="tabProb">確率設定</button>
+                <button class="tab-btn" data-tab="tabRarity">レアリティ収録数</button>
+            </div>
+
+            <div class="tab-content active" id="tabHome">
+                <h3>ホーム画面の機能</h3>
+                <p>このシミュレータの基本画面です。</p>
+                <img src="images/つかいかたホーム画面.png" alt="ホーム画面の解説" class="usage-img">
+                <ul>
+                    <li><strong>1パック開封 / 10パック開封</strong>: ボタンを押すと、設定された確率に基づいてカードが排出されます。</li>
+                    <li><strong>確率設定</strong>: パックの封入内容の確率や、各レアリティの排出確率が変更できます。全体的な設定のプリセットもこのページで変更できます。</li>
+                    <li><strong>レアリティ収録数</strong>: 各レアリティのカードの収録数を変更できます。また、「ほしいカード」を設定できます。</li>
+                    <li><strong>適応中の設定</strong>:
+                        現在適用されている設定の表示です。プリセットを読み込むとそのプリセット名が、初期設定やプリセットから"ほしい"以外の設定を変更すると"カスタム設定"と表示されます。</li>
+                    <li><strong>つかいかた</strong>: このウィンドウです。</li>
+                </ul>
+            </div>
+
+            <div class="tab-content" id="tabPack">
+                <h3>パック開封時の画面</h3>
+                <p>パックを開封した後の画面です。</p>
+                <img src="images/つかいかた開封画面.png" alt="開封画面の解説" class="usage-img">
+                <ul>
+                    <li><strong>結果表示画面</strong>:
+                        出てきたカードの画像、レアリティ、カード番号を確認できます。「ほしい」に設定したカードが出た場合は「ほしいカード！」と表示されます。レア封入の場合は「レア封入！」と表示されます。</li>
+                    <li><strong>適応中の設定</strong>: ホーム画面の「適応中の設定」と同じく、設定の名前が表示されます。</li>
+                    <li><strong>開封統計バー</strong>: 画面上部に、現在のセッションで開封したパック数や、シミュレーション上の消費金額（円、ゴールド、砂時計）が表示されます。</li>
+                    <li><strong>ほしいカード統計バー</strong>:
+                        「レアリティ収録数」で設定した「ほしいカード」を獲得すると、その総獲得数が表示されます。どの「ほしいカード」も獲得していない場合は「何もない…」と表示されます。設定するには＞<strong>レアリティ収録数</strong>
+                    </li>
+                    <li><strong>もう一度開封する</strong>: 同じ設定で続けてパックを開封します。</li>
+                    <li><strong>ホームに戻る</strong>: 開封結果を閉じてホーム画面に戻ります。</li>
+                </ul>
+            </div>
+
+            <div class="tab-content" id="tabProb">
+                <h3>確率設定ページ</h3>
+                <p>パック開封に関わる確率を自由にカスタマイズできます。</p>
+                <img src="images/つかいかた確率設定.png" alt="確率設定の解説" class="usage-img">
+                <ul>
+                    <li><strong>6枚封入(％)</strong>: 開封したパックが6枚封入になる確率を設定します。</li>
+                    <li><strong>レア封入(％)</strong>: 開封したパックがレア封入になる確率を設定します。</li>
+                    <li><strong>プリセット</strong>: プリセットウィンドウを開きます。詳しくは＞<strong>プリセットウィンドウ</strong></li>
+                    <li><strong>パックカラー</strong>: ホーム画面や開封画面の背景色を変更できます。設定の目印としてご利用ください。</li>
+                    <li><strong>レアリティ別確率設定</strong>:各レアリティが、4、5、または6枚目で排出される確率を設定します。5枚封入、6枚封入、レア封入それぞれで設定可能です。</li>
+                </ul>
+                <img src="images/つかいかたレア封入.png" alt="レア封入の解説" class="usage-img">
+                <ul>
+                    <li><strong>レア封入の排出確率</strong>:
+                        レア封入時に、各レアリティが排出される確率を設定します。「全カード均一」もしくは「🌈系除外」を選択すると、「レアリティ収録数」で設定した枚数から均一に排出されます。
+                    </li>
+                </ul>
+                <img src="images/つかいかたプリセット.png" alt="プリセットウィンドウの解説" class="usage-img">
+                <ul>
+                    <li><strong>プリセットウィンドウ</strong>:入力されている設定を、名称を設定してプリセットとして保存できます。また、保存したプリセットの読み込み、上書き、削除ができます。「パックカラー」で設定した色が名称の横に表示されます。
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-content" id="tabRarity">
+                <h3>レアリティ収録数設定ページ</h3>
+                <p>各レアリティに存在するカードの収録数を設定します。</p>
+                <img src="images/つかいかたレアリティ枚数.png" alt="収録数設定の解説" class="usage-img">
+                <ul>
+                    <li><strong>収録数設定</strong>: 各レアリティのカード枚数を入力してください。</li>
+                    <li><strong>ほしいカード設定</strong>:
+                        特定のカードを「ほしい！」に設定すると、そのカードが出た時に強調表示され、ほしいカード統計バーにも記録されます。数字は半角入力で、カンマ(,)で区切って入力してください。</li>
                 </ul>
             </div>
         </div>
-
-        <!-- 全キャラ勝率画面（初期は非表示） -->
-        <div id="ranking-view" class="match-container hidden">
-            <div class="match-header">
-                <button id="back-from-ranking-btn" class="back-btn">← キャラ選択に戻る</button>
-                <h2 class="vs-text">全キャラ勝率ランキング</h2>
-            </div>
-
-            <div class="action-buttons ranking-tabs">
-                <button id="tab-10-btn" class="result-btn win-btn active-tab">直近10戦</button>
-                <button id="tab-50-btn" class="result-btn loss-btn inactive-tab">直近50戦</button>
-            </div>
-
-            <div class="history-section">
-                <ul id="ranking-list" class="history-list ranking-list">
-                    <!-- JavaScriptでランキングを生成 -->
-                </ul>
-            </div>
-        </div>
-
-        <!-- 詳細勝率画面（初期は非表示） -->
-        <div id="detail-view" class="match-container hidden">
-            <div class="match-header">
-                <button id="back-from-detail-btn" class="back-btn">← キャラ選択に戻る</button>
-                <h2 id="detail-char-name" class="vs-text">キャラクター詳細勝率</h2>
-            </div>
-
-            <!-- 総合勝率表示領域 -->
-            <div class="detail-overview">
-                <div class="detail-overview-item">
-                    <span class="detail-overview-label">直近10戦 総合勝率</span>
-                    <span id="detail-rate-10" class="detail-overview-value">--%</span>
-                    <button id="breakdown-10-btn" class="breakdown-btn hidden">内訳</button>
-                </div>
-                <div class="detail-overview-item">
-                    <span class="detail-overview-label">直近50戦 総合勝率</span>
-                    <span id="detail-rate-50" class="detail-overview-value">--%</span>
-                    <button id="breakdown-50-btn" class="breakdown-btn hidden">内訳</button>
-                </div>
-            </div>
-
-            <!-- 内訳インライン表示領域 -->
-            <div id="breakdown-inline-container" class="breakdown-inline-container hidden">
-                <div class="breakdown-inline-header">
-                    <h4 id="breakdown-title">直近10戦 内訳</h4>
-                </div>
-                <ul id="breakdown-list" class="history-list breakdown-list">
-                    <!-- Java Scriptで履歴を生成 -->
-                </ul>
-            </div>
-
-            <div class="history-section">
-                <!-- マッチアップ別ランキング -->
-                <div class="history-header">
-                    <h3>得意な相手ランキング</h3>
-                </div>
-                <ul id="detail-ranking-list" class="history-list ranking-list">
-                    <!-- JavaScriptでランキングを生成 -->
-                </ul>
-            </div>
-        </div>
-
-        <!-- ローディング画面 -->
-        <div id="loading-overlay" class="loading-overlay hidden">
-            <div class="loader"></div>
-            <p style="font-weight: bold; color: #4a5568;">通信中...</p>
-        </div>
-    </main>
+    </div>
 
     <script src="script.js"></script>
 </body>
