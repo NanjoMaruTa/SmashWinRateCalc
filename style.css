@@ -468,17 +468,61 @@ body {
     background-color: #fff;
 }
 
+.ranking-left-group {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+}
+
 .ranking-rank {
     font-weight: bold;
     font-size: 16px;
     color: #4a5568;
-    width: 30px;
+    width: 36px;
+    flex-shrink: 0;
+}
+
+.ranking-img-wrapper {
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.ranking-img {
+    width: 24px;
+    height: 24px;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 4px;
+    /* 四角ベースのまま角を少し丸化 */
+}
+
+/* ヘッダー画像表示用 */
+.vs-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.header-img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
 }
 
 .ranking-name {
-    flex-grow: 1;
     font-weight: bold;
     color: var(--text-color);
+    font-size: 15px;
 }
 
 .ranking-rate {
@@ -515,6 +559,55 @@ body {
     font-size: 28px;
     font-weight: bold;
     color: #3182ce;
+    margin-bottom: 8px;
+    /* 内訳ボタンとの余白 */
+}
+
+/* 内訳ボタン */
+.breakdown-btn {
+    background-color: transparent;
+    border: 1px solid #3182ce;
+    color: #3182ce;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.breakdown-btn:hover {
+    background-color: #3182ce;
+    color: white;
+}
+
+/* 内訳インライン表示領域用のスタイル */
+.breakdown-inline-container {
+    background-color: #f7fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 24px;
+    padding: 16px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.breakdown-inline-header {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #cbd5e0;
+}
+
+.breakdown-inline-header h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.breakdown-list {
+    margin: 0;
+    max-height: 250px;
+    overflow-y: auto;
+    border: none;
 }
 
 /* ローディング画面エリア */

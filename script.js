@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedPlayerDisplay = document.getElementById('selected-player-display');
     const playerNameText = document.getElementById('player-name-text');
 
+    // 勝敗記録画面 (旧：勝率計算・記録ページ / マッチ画面)
     const matchView = document.getElementById('match-view');
     const backToRosterBtn = document.getElementById('back-to-roster-btn');
     const vsText = document.getElementById('vs-text');
@@ -31,6 +32,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailRate10 = document.getElementById('detail-rate-10');
     const detailRate50 = document.getElementById('detail-rate-50');
     const detailRankingListEl = document.getElementById('detail-ranking-list');
+
+    // 内訳インライン用のDOM取得
+    const breakdown10Btn = document.getElementById('breakdown-10-btn');
+    const breakdown50Btn = document.getElementById('breakdown-50-btn');
+    const breakdownInlineContainer = document.getElementById('breakdown-inline-container');
+    const breakdownTitle = document.getElementById('breakdown-title');
+    const breakdownList = document.getElementById('breakdown-list');
+
+    // 現在表示中の「内訳」の状態管理
+    let activeBreakdownType = null; // '10' or '50' or null
 
     // ローディング画面用
     const loadingOverlay = document.getElementById('loading-overlay');
@@ -225,32 +236,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 画面切り替え
         rosterView.classList.add('hidden');
-        matchView.classList.remove('hidden');
+        matchView.classList.remove('hidden'); // 勝敗記録画面を表示
 
         // VSテキスト設定
         const pName = characterList[pId];
         const oName = characterList[oId];
-        vsText.textContent = `${pName} VS ${oName}`;
+        vsText.innerHTML = `
+            <div class="vs-header-content">
+                <img src="images/${pName}.jpg" class="header-img" alt="${pName}" onerror="this.style.display='none'">
+                <span>${pName} VS ${oName}</span>
+                <img src="images/${oName}.jpg" class="header-img" alt="${oName}" onerror="this.style.display='none'">
+            </div>
+        `;
 
         renderMatchStats();
     }
 
     function closeMatchView() {
-        currentPhase = 'player';
+        currentPhase = 'opponent';
         matchView.classList.add('hidden');
         rosterView.classList.remove('hidden');
 
-        // 選択状態のリセット
-        if (selectedPlayerBtn) selectedPlayerBtn.classList.remove('selected');
+        // 相手キャラの選択状態のみリセット
         if (selectedOpponentBtn) selectedOpponentBtn.classList.remove('selected');
-        selectedPlayerBtn = null;
         selectedOpponentBtn = null;
-        selectedPlayerId = null;
         selectedOpponentId = null;
 
-        instructionText.textContent = '使用キャラクターを選択してください';
-        backBtn.classList.add('hidden');
-        selectedPlayerDisplay.classList.add('hidden');
+        instructionText.textContent = '対戦相手のキャラを選択して下さい';
+
+        // 使用キャラは選択されたままなので、表示を維持
+        backBtn.classList.remove('hidden');
+        selectedPlayerDisplay.classList.remove('hidden');
     }
 
     // ---- ランキング処理 ----
@@ -323,9 +339,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 rankSpan.className = 'ranking-rank';
                 rankSpan.textContent = `${index + 1}位`;
 
+                // --- 画像要素の追加 ---
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'ranking-img-wrapper';
+
+                const img = document.createElement('img');
+                img.src = `images/${item.name}.jpg`;
+                img.alt = item.name;
+                img.className = 'ranking-img';
+
+                // 画像読み込み成功時のみ要素を追加
+                img.addEventListener('load', () => {
+                    imgWrap.appendChild(img);
+                });
+
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'ranking-name';
                 nameSpan.textContent = item.name;
+
+                // 左側の要素をまとめるラッパー（ランク、画像、名前）
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'ranking-left-group';
+                leftDiv.appendChild(rankSpan);
+                leftDiv.appendChild(imgWrap);
+                leftDiv.appendChild(nameSpan);
 
                 const rateSpan = document.createElement('span');
                 rateSpan.className = 'ranking-rate';
@@ -343,8 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 rightDiv.appendChild(rateSpan);
                 rightDiv.appendChild(detailSpan);
 
-                li.appendChild(rankSpan);
-                li.appendChild(nameSpan);
+                li.appendChild(leftDiv);
                 li.appendChild(rightDiv);
 
                 rankingListEl.appendChild(li);
@@ -372,7 +408,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = globalMatchData;
         const opponentRankingData = [];
         const charName = characterList[targetCharId];
-        detailCharName.textContent = `${charName}の詳細勝率`;
+        detailCharName.innerHTML = `
+            <div class="vs-header-content">
+                <img src="images/${charName}.jpg" class="header-img" alt="${charName}" onerror="this.style.display='none'">
+                <span>${charName}の詳細勝率</span>
+            </div>
+        `;
 
         // 過去の該当キャラの全試合を1つの配列に収集しつつ、相手ごとのデータも集計
         let allGames = [];
@@ -409,15 +450,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     total: recentOppGames.length
                 });
 
-                allGames = allGames.concat(oppGames);
+                // allGames に追加する際、対戦相手のIDも付与しておく（内訳表示用）
+                const oppGamesWithId = oppGames.map(game => ({
+                    ...game,
+                    opponentId: i
+                }));
+                allGames = allGames.concat(oppGamesWithId);
             }
         }
 
         // --- 総合勝率処理 ---
         // 全試合を最新順にソート
         allGames.sort((a, b) => {
-            const timeA = typeof a.d === 'number' ? a.d : new Date(`20${a.d.slice(0, 2)}-${a.d.slice(2, 4)}-${a.d.slice(4, 6)}`).getTime();
-            const timeB = typeof b.d === 'number' ? b.d : new Date(`20${b.d.slice(0, 2)}-${b.d.slice(2, 4)}-${b.d.slice(4, 6)}`).getTime();
+            const timeA = typeof a.d === 'number' ? a.d : new Date(`20${a.d.slice(0, 2)} -${a.d.slice(2, 4)} -${a.d.slice(4, 6)} `).getTime();
+            const timeB = typeof b.d === 'number' ? b.d : new Date(`20${b.d.slice(0, 2)} -${b.d.slice(2, 4)} -${b.d.slice(4, 6)} `).getTime();
             return timeB - timeA;
         });
 
@@ -425,19 +471,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const recent10 = allGames.slice(0, 10);
         if (recent10.length > 0) {
             const wins10 = recent10.filter(g => g.r === 1).length;
-            detailRate10.textContent = `${Math.round((wins10 / recent10.length) * 100)}%`;
+            detailRate10.textContent = `${Math.round((wins10 / recent10.length) * 100)}% `;
+            breakdown10Btn.classList.remove('hidden');
         } else {
             detailRate10.textContent = '--%';
+            breakdown10Btn.classList.add('hidden');
         }
+
+        // 10戦内訳ボタンイベント
+        breakdown10Btn.onclick = () => toggleBreakdown('10', recent10, "直近10戦 内訳");
 
         // 50戦総合勝率
         const recent50 = allGames.slice(0, 50);
         if (recent50.length > 0) {
             const wins50 = recent50.filter(g => g.r === 1).length;
-            detailRate50.textContent = `${Math.round((wins50 / recent50.length) * 100)}%`;
+            detailRate50.textContent = `${Math.round((wins50 / recent50.length) * 100)}% `;
+            breakdown50Btn.classList.remove('hidden');
         } else {
             detailRate50.textContent = '--%';
+            breakdown50Btn.classList.add('hidden');
         }
+
+        // 50戦内訳ボタンイベント
+        breakdown50Btn.onclick = () => toggleBreakdown('50', recent50, "直近50戦 内訳");
 
         // --- 相手ランキング処理 ---
         // 勝率で降順ソート
@@ -463,9 +519,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 rankSpan.className = 'ranking-rank';
                 rankSpan.textContent = `${index + 1}位`;
 
+                // --- 画像要素の追加 ---
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'ranking-img-wrapper';
+
+                const img = document.createElement('img');
+                img.src = `images/${item.opponentName}.jpg`;
+                img.alt = item.opponentName;
+                img.className = 'ranking-img';
+
+                img.addEventListener('load', () => {
+                    imgWrap.appendChild(img);
+                });
+
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'ranking-name';
                 nameSpan.textContent = `vs ${item.opponentName}`;
+
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'ranking-left-group';
+                leftDiv.appendChild(rankSpan);
+                leftDiv.appendChild(imgWrap);
+                leftDiv.appendChild(nameSpan);
 
                 const rateSpan = document.createElement('span');
                 rateSpan.className = 'ranking-rate';
@@ -483,8 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 rightDiv.appendChild(rateSpan);
                 rightDiv.appendChild(detailSpan);
 
-                li.appendChild(rankSpan);
-                li.appendChild(nameSpan);
+                li.appendChild(leftDiv);
                 li.appendChild(rightDiv);
 
                 detailRankingListEl.appendChild(li);
@@ -496,6 +570,9 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPhase = 'detail';
         rosterView.classList.add('hidden');
         detailView.classList.remove('hidden');
+        // 詳細画面を開くときは内訳表示をリセット
+        activeBreakdownType = null;
+        breakdownInlineContainer.classList.add('hidden');
         renderDetailStats(selectedPlayerId);
     }
 
@@ -505,9 +582,90 @@ document.addEventListener('DOMContentLoaded', () => {
         rosterView.classList.remove('hidden');
     }
 
+    // ---- 内訳インライン処理 ----
+    function toggleBreakdown(type, games, title) {
+        // 同じボタンが押された場合は閉じる（トグル）
+        if (activeBreakdownType === type) {
+            breakdownInlineContainer.classList.add('hidden');
+            activeBreakdownType = null;
+            return;
+        }
+
+        // 違うボタンが押された（または初回）の場合は表示内容を更新して開く
+        activeBreakdownType = type;
+        breakdownTitle.textContent = title;
+        breakdownList.innerHTML = '';
+
+        if (games.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.textContent = 'データがありません。';
+            li.style.justifyContent = 'center';
+            breakdownList.appendChild(li);
+        } else {
+            games.forEach((item) => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+
+                // 日付
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'history-date';
+                dateSpan.textContent = formatDisplayDate(item.d);
+
+                // 対戦相手
+                const oppName = characterList[item.opponentId];
+
+                // 画像要素の追加
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'ranking-img-wrapper';
+                imgWrap.style.marginLeft = '16px'; // 日付との間隔
+
+                const img = document.createElement('img');
+                img.src = `images/${oppName}.jpg`;
+                img.alt = oppName;
+                img.className = 'ranking-img';
+
+                img.addEventListener('load', () => {
+                    imgWrap.appendChild(img);
+                });
+
+                const oppSpan = document.createElement('span');
+                oppSpan.style.flexGrow = '1';
+                oppSpan.style.marginLeft = '12px'; // 画像との間隔
+                oppSpan.style.fontWeight = 'bold';
+                oppSpan.textContent = `vs ${oppName}`;
+
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'ranking-left-group';
+                leftDiv.appendChild(dateSpan);
+                leftDiv.appendChild(imgWrap);
+                leftDiv.appendChild(oppSpan);
+
+                // 勝敗
+                const rightDiv = document.createElement('div');
+                rightDiv.className = 'history-right';
+                const resultSpan = document.createElement('span');
+                if (item.r === 1) {
+                    resultSpan.className = 'history-result win';
+                    resultSpan.textContent = 'WIN';
+                } else {
+                    resultSpan.className = 'history-result loss';
+                    resultSpan.textContent = 'LOSE';
+                }
+                rightDiv.appendChild(resultSpan);
+
+                li.appendChild(leftDiv);
+                li.appendChild(rightDiv);
+                breakdownList.appendChild(li);
+            });
+        }
+
+        breakdownInlineContainer.classList.remove('hidden');
+    }
+
     // ---- イベントリスナー設定 ----
 
-    // オサレ・勝敗入力画面の戻るボタン
+    // 勝敗記録画面の戻るボタン
     backToRosterBtn.addEventListener('click', closeMatchView);
 
     // キャラ選択画面の戻るボタン（対戦相手選択中から使用キャラ選択へ）
@@ -567,7 +725,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (confirm(`このマッチアップの対戦履歴（全${history.length}件）を本当にすべて消去しますか？\nこの操作は元に戻せません。`)) {
+        if (confirm(`このマッチアップの対戦履歴（全${history.length} 件）を本当にすべて消去しますか？\nこの操作は元に戻せません。`)) {
             // 画面上から消去
             globalMatchData[currentMatchKey] = [];
             renderMatchStats();

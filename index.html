@@ -28,7 +28,7 @@
             </div>
         </div>
 
-        <!-- 勝率計算・記録ページ（初期は非表示） -->
+        <!-- 勝敗記録画面（初期は非表示） -->
         <div id="match-view" class="match-container hidden">
             <div class="match-header">
                 <button id="back-to-roster-btn" class="back-btn">← キャラ選択に戻る</button>
@@ -96,11 +96,23 @@
                 <div class="detail-overview-item">
                     <span class="detail-overview-label">直近10戦 総合勝率</span>
                     <span id="detail-rate-10" class="detail-overview-value">--%</span>
+                    <button id="breakdown-10-btn" class="breakdown-btn hidden">内訳</button>
                 </div>
                 <div class="detail-overview-item">
                     <span class="detail-overview-label">直近50戦 総合勝率</span>
                     <span id="detail-rate-50" class="detail-overview-value">--%</span>
+                    <button id="breakdown-50-btn" class="breakdown-btn hidden">内訳</button>
                 </div>
+            </div>
+
+            <!-- 内訳インライン表示領域 -->
+            <div id="breakdown-inline-container" class="breakdown-inline-container hidden">
+                <div class="breakdown-inline-header">
+                    <h4 id="breakdown-title">直近10戦 内訳</h4>
+                </div>
+                <ul id="breakdown-list" class="history-list breakdown-list">
+                    <!-- Java Scriptで履歴を生成 -->
+                </ul>
             </div>
 
             <div class="history-section">
