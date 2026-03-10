@@ -432,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let allGames = [];
 
         for (let i = 0; i < totalCharacters - 1; i++) {
-            if (i === targetCharId) continue; // 同キャラ戦も集計する場合はコメントアウト
+            // 同キャラ戦も含めて集計するためスキップしない
 
             // targetCharId がプレイヤー側だった場合
             const key1 = `${targetCharId}_${i}`;
@@ -881,4 +881,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // 初回ロード時にデータを取得しておく
     loadHistoryData();
 });
+
 
