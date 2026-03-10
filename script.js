@@ -46,6 +46,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // ローディング画面用
     const loadingOverlay = document.getElementById('loading-overlay');
 
+    // ---- ユーティリティ ----
+    function autoShrinkText(element, defaultSize = 15, minSize = 9) {
+        requestAnimationFrame(() => {
+            let fontSize = defaultSize;
+            element.style.fontSize = fontSize + 'px';
+            while (element.scrollWidth > element.offsetWidth && fontSize > minSize) {
+                fontSize -= 0.5;
+                element.style.fontSize = fontSize + 'px';
+            }
+        });
+    }
+
     // ---- キャラクター名リスト（全87個） ----
     const characterList = [
         "マリオ", "ドンキーコング", "リンク", "サムス", "ダークサムス", "ヨッシー", "カービィ", "フォックス",
@@ -384,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 li.appendChild(rightDiv);
 
                 rankingListEl.appendChild(li);
+                autoShrinkText(nameSpan);
             });
         }
     }
@@ -534,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'ranking-name';
-                nameSpan.textContent = `vs ${item.opponentName}`;
+                nameSpan.textContent = `${item.opponentName}`;
 
                 const leftDiv = document.createElement('div');
                 leftDiv.className = 'ranking-left-group';
@@ -562,6 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 li.appendChild(rightDiv);
 
                 detailRankingListEl.appendChild(li);
+                autoShrinkText(nameSpan);
             });
         }
     }
@@ -630,9 +644,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 const oppSpan = document.createElement('span');
+                oppSpan.className = 'ranking-name';
                 oppSpan.style.flexGrow = '1';
                 oppSpan.style.marginLeft = '12px'; // 画像との間隔
-                oppSpan.style.fontWeight = 'bold';
                 oppSpan.textContent = `vs ${oppName}`;
 
                 const leftDiv = document.createElement('div');
@@ -657,6 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 li.appendChild(leftDiv);
                 li.appendChild(rightDiv);
                 breakdownList.appendChild(li);
+                autoShrinkText(oppSpan);
             });
         }
 
