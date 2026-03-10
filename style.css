@@ -1,1349 +1,730 @@
+/* 白基調のシンプルなデザイン */
 :root {
-    --bg-color: #f0f2f5;
-    --text-color: #333;
-    --primary-color: #007bff;
-    /* Bright blue like a button */
-    --accent-color: #ffcc00;
-    /* Pikachu yellow/gold */
+    --bg-color: #f7f9fc;
     --card-bg: #ffffff;
-    --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.05);
-    --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.1);
-    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --text-color: #333333;
+    --border-color: #e2e8f0;
+    --accent-red: #e53e3e;
+    /* スマブラらしい赤いアクセントカラー */
+    --hover-bg: #fdf2f2;
 }
+
+
 
 body {
     margin: 0;
     padding: 0;
-    font-family: var(--font-family);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    overflow: hidden;
-    /* Prevent scroll during animations */
 }
 
-.app-container {
-    width: 100%;
-    max-width: 480px;
-    /* Mobile-like width */
-    height: 100vh;
-    background-color: var(--card-bg);
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    position: relative;
-    overflow: hidden;
-    /* Prevent trapezoid from leaking outside container */
-}
-
+/* ヘッダー */
 .app-header {
-    padding: 20px;
+    background-color: var(--card-bg);
+    padding: 24px 20px;
     text-align: center;
-    background: linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%);
-    border-bottom: 1px solid #eee;
-    position: relative;
-    /* Establish stacking context */
-    z-index: 10;
-    /* Above trapezoid and content */
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .app-header h1 {
-    margin: 0;
-    font-size: 1.2rem;
+    margin: 0 0 8px 0;
+    font-size: 24px;
     font-weight: 700;
-    color: #444;
+    color: var(--text-color);
 }
 
+.app-header p {
+    margin: 0;
+    font-size: 14px;
+    color: #666666;
+}
+
+/* メインコンテンツ */
 .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-around;
-    /* Distribute space */
-    padding: 20px;
-    position: relative;
-    z-index: 2;
-    /* Content sits above trapezoid background */
-}
-
-/* Trapezoid background behind pack area */
-/* app-container 基準で配置するため top にヘッダー高さを加算 */
-.pack-bg-trapezoid {
-    position: absolute;
-    top: 69px;
-    /* app-header の高さ（padding 20px + h1 + border = 約63px）分ずらす */
-    left: 0;
-    width: 100%;
-    height: 55%;
-    /* Covers just below header down to roughly below the pack */
-    background-color: #d35cf7;
-    /* Default GenePurple */
-    clip-path: polygon(0% 0%, 100% 0%, 100% 40%, 0% 65%);
-    /* Trapezoid: full-width at top, narrows from left at bottom */
-    z-index: 1;
-    /* Sits behind content (z-index 2) but above app body */
-    /* Behind pack and button */
-}
-
-/* Make trapezoid lighter in results view */
-.app-results-view .pack-bg-trapezoid {
-    opacity: 0.25;
-    /* 25% opacity to make it look lighter */
-}
-
-/* Setting name label - white pill in top-left of trapezoid */
-.setting-name-label {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    background-color: rgba(255, 255, 255, 0.92);
-    border-radius: 10px;
-    padding: 4px 12px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #444;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-    max-width: 55%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    z-index: 1;
-    pointer-events: none;
-}
-
-/* Pack Styles */
-.pack-container {
-    position: relative;
-    width: 280px;
-    height: 340px;
-    /* Reduced height for shorter pack */
-    /* Adjust based on image aspect ratio */
+    padding: 0px 16px;
     display: flex;
     justify-content: center;
-    align-items: center;
-    /* Shadow removed */
-    transition: transform 0.3s ease;
-    z-index: 1;
-    /* Above trapezoid background */
 }
 
-.pack-container:hover {
-    transform: scale(1.02);
-}
-
-.pack-wrapper {
-    position: relative;
+.roster-container {
     width: 100%;
+    max-width: 1200px;
+}
+
+/* ロースター上部ヘッダー（戻るボタン配置用） */
+.roster-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    height: 32px;
+}
+
+/* 戻るボタン */
+.back-btn {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 6px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #666666;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.back-btn:hover {
+    background-color: var(--hover-bg);
+    border-color: var(--accent-red);
+    color: var(--accent-red);
+}
+
+.selected-player-display {
+    background-color: #ffffff;
+    color: #5f5f5f;
+    padding: 0 12px;
+    border-radius: 4px;
+    border: 1px solid #bdbcbc;
+    font-size: 14px;
+    font-weight: bold;
     height: 100%;
-}
-
-/* Pack Images Handling for Splitting */
-/* Pack Images Handling for Splitting */
-.pack-image-top,
-.pack-image-body {
-    width: 100%;
-    display: block;
-    position: absolute;
-    left: 0;
-    /* Remove checkerboard by high contrast */
-    filter: grayscale(1) contrast(5) brightness(1.2);
-}
-
-.pack-top {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 25%;
-    /* Cut lower as requested (red line) */
-    overflow: hidden;
-    z-index: 2;
-    transform-origin: bottom center;
-}
-
-.pack-top img {
-    top: 0;
-    height: 400%;
-    /* 100 / 0.25 */
-}
-
-.pack-body {
-    position: absolute;
-    top: 25%;
-    left: 0;
-    width: 100%;
-    height: 75%;
-    overflow: hidden;
-    z-index: 1;
-}
-
-.pack-body img {
-    top: -33.333%;
-    /* 25 / 75 = 1/3 */
-    height: 133.333%;
-    /* 100 / 0.75 */
-}
-
-/* Animations */
-@keyframes tearOff {
-    0% {
-        transform: rotate(0deg) translateY(0);
-        opacity: 1;
-    }
-
-    20% {
-        transform: rotate(-5deg) translateY(-5px);
-    }
-
-    40% {
-        transform: rotate(5deg) translateY(-10px);
-    }
-
-    100% {
-        transform: rotate(15deg) translateY(50px) translateX(20px);
-        opacity: 0;
-    }
-}
-
-.pack-top.torn {
-    animation: tearOff 0.6s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
-}
-
-.pack-container.shake {
-    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
-}
-
-@keyframes shake {
-
-    10%,
-    90% {
-        transform: translate3d(-1px, 0, 0);
-    }
-
-    20%,
-    80% {
-        transform: translate3d(2px, 0, 0);
-    }
-
-    30%,
-    50%,
-    70% {
-        transform: translate3d(-4px, 0, 0);
-    }
-
-    40%,
-    60% {
-        transform: translate3d(4px, 0, 0);
-    }
-}
-
-/* Buttons */
-.controls-container {
-    width: 100%;
     display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.primary-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-}
-
-.btn-primary {
-    background: linear-gradient(to bottom, #ffffff, #f0f0f0);
-    border: 1px solid #ddd;
-    border-radius: 25px;
-    padding: 12px 24px;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #333;
-    cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
-    /* Soft shadow */
-    transition: all 0.2s ease;
-    flex: 1;
-    max-width: 160px;
-    display: flex;
-    justify-content: center;
     align-items: center;
 }
 
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
-    background: #fff;
-    border-color: #ccc;
+.selected-player-display span {
+    margin-left: 8px;
+    color: #5f5f5f;
 }
 
-.btn-primary:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.secondary-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-}
-
-.btn-secondary {
-    background: transparent;
-    border: 1px solid #ddd;
-    color: #666;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-    background-color: #f5f5f5;
-    color: #333;
-    border-color: #ccc;
-}
-
-.btn-usage {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: rgba(255, 255, 255, 1);
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 4px 10px;
-    font-size: 0.75rem;
-    color: #888;
-    cursor: pointer;
-    z-index: 5;
-    /* Well above trapezoid */
-    transition: all 0.2s ease;
-}
-
-.btn-usage:hover {
-    background: #fff;
-    color: #555;
-    border-color: #bbb;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-/* Utility */
 .hidden {
     display: none !important;
 }
 
-/* Card Reveal Screen */
-.card-reveal-screen {
-    width: 100%;
-    height: 100%;
-    max-height: 100vh;
-    /* Limit to viewport height */
-    overflow-y: auto;
-    /* Enable scroll on outer container */
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    /* Start from top to prevent buttons from being pushed off-screen */
-    align-items: center;
-    gap: 30px;
-    padding: 20px 0;
-    /* Add padding for spacing */
-    animation: fadeIn 0.5s ease-out;
-}
-
-.session-stats-bar {
-    position: relative;
-    z-index: 2;
-    background-color: #fff;
-    /* Changed to white */
-    font-size: 0.95rem;
-    color: #666;
-    /* Subtle text color */
-    font-weight: 600;
-    margin: -20px -20px 0 -20px;
-    /* Offset main-content padding (Top, Right, Bottom, Left) */
-    padding: 12px 20px 8px 20px;
-    /* Slightly more top padding for vertical balance */
-    border-bottom: 1px solid #dbdbdb;
-    display: flex;
-    gap: 15px;
-    /* Space between items */
-    justify-content: center;
-    align-items: center;
-    width: calc(100% + 40px);
-    /* Full width of container */
-    flex-wrap: wrap;
-    box-sizing: border-box;
-}
-
-/* Main Content adjustments when stats are shown */
-
-.desired-stats-bar {
-    position: relative;
-    z-index: 2;
-    font-size: 0.95rem;
-    color: #666;
-    /* Subtle text color */
-    font-weight: 600;
-    margin: 0 -20px 0 -20px;
-    /* Offset main-content padding */
-    padding: 8px 20px;
-    /* Add internal padding since we offset parent */
-    border-bottom: 1px solid #dbdbdb;
-    display: flex;
-    align-items: center;
-    width: calc(100% + 40px);
-    /* Full width of container */
-    background-color: #fff;
-    /* Already white, but keeping for consistency */
-    box-sizing: border-box;
-}
-
-.desired-label {
-    font-size: 0.75rem;
-    flex-shrink: 0;
-    color: #888;
-}
-
-.desired-items {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    justify-content: center;
-    flex-grow: 1;
-}
-
-.empty-text {
-    font-size: 0.85rem;
-    color: #bbb;
-    font-weight: normal;
-    font-style: italic;
-}
-
-.stats-item {
-    display: flex;
-    align-items: center;
+/* キャラクターリストのグリッド */
+.roster {
+    display: grid;
+    /* 横13列 */
+    grid-template-columns: repeat(13, 1fr);
     gap: 4px;
-}
-
-.card-reveal-screen.is-single-pack {
-    justify-content: center;
-    /* Center content vertically */
-}
-
-/* Adjust grid padding in single pack mode to fix visual center */
-.card-reveal-screen.is-single-pack .cards-grid {
-    padding-bottom: 120px;
-    /* Reduced from 200px to balance with top padding and footer */
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.cards-grid {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 15px;
-    padding: 50px 10px 10px 10px;
-    /* Increased top padding to push content down */
-    padding-bottom: 280px;
-    /* Further increased to clear fixed footer */
-    width: 100%;
-    max-width: 290px;
-    /* Force wrap after 3 cards (80*3 + 15*2 = 270px) */
-}
-
-/* Pack Result Row (for multi-pack display) */
-.pack-result-row {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-    width: 100%;
-    max-width: 290px;
-    margin: 0 auto 30px auto;
-    /* Add spacing between packs */
-    padding-bottom: 20px;
-    border-bottom: 2px dashed #ddd;
-    /* Visual separator */
-    position: relative;
-    z-index: 10;
-}
-
-.pack-result-row:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-}
-
-.reveal-controls {
-    position: fixed;
-    bottom: 0;
-    /* Align to the very bottom */
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    width: 100%;
-    max-width: 480px;
-    /* Increased from 400px to match app container width */
-    padding: 20px 0 35px 0;
-    /* Add bottom padding to push buttons up from edge */
-    background: #fff;
-    /* Solid white background */
-    /* border-top: 2px solid #ccc; Removed to use pseudo-element for custom width */
-    z-index: 10;
-}
-
-.reveal-controls::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
-    /* Not full width */
-    height: 2px;
-    background-color: #ccc;
-}
-
-.white-card {
-    width: 79px;
-    /* Increased size */
-    height: 112px;
-    /* Aspect ratio roughly 2.5:3.5 */
-    background-color: #ffffff;
-    border: 2px solid #000;
-    /* Added black border */
-    border-radius: 4px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-    position: relative;
-    /* For absolute positioning of rarity */
-    display: flex;
-    justify-content: center;
-    overflow: visible !important;
-    /* Ensure labels outside the card are visible */
-    align-items: flex-end;
-    /* Align content to bottom */
-}
-
-.white-card.rarity-crown {
-    background-image: url('images/クラウン.png');
-    background-size: 105%;
-    background-position: center;
-    border: 2px solid transparent;
-}
-
-.white-card.rarity-rainbow2 {
-    background-image: url('images/色違い.png');
-    background-size: 105%;
-    background-position: center;
-    border: 2px solid transparent;
-}
-
-.white-card.rarity-rainbow {
-    background-image: url('images/色違い.png');
-    background-size: 105%;
-    background-position: center;
-    border: 2px solid transparent;
-}
-
-.white-card.rarity-star3 {
-    background-image: url('images/イマーシブ.png');
-    background-size: 105%;
-    background-position: center;
-    border: 2px solid transparent;
-}
-
-.white-card.rarity-star2 {
-    background-image: url('images/星2.png');
-    background-size: 105%;
-    background-position: center;
-    border: 2px solid transparent;
-}
-
-.white-card.rarity-star1 {
-    background-image: url('images/星1.png');
-    background-size: 105%;
-    background-position: center;
-    border: 2px solid transparent;
-}
-
-.white-card.rarity-dia4 {
-    background-image: url('images/ダイヤ4.png');
-    background-size: 105%;
-    background-position: center;
-    border: 2px solid transparent;
-}
-
-.white-card.rarity-dia3 {
-    background-image: url('images/ダイヤ3.png');
-    background-size: 105%;
-    background-position: center;
-    border: 2px solid transparent;
-    /* Keep size consistent with other cards (80+2+2 = 84px) */
-}
-
-.card-rarity {
-    position: absolute;
-    bottom: 4px;
-    font-size: 21px;
-    color: #000;
-    font-weight: bold;
-    text-align: center;
-    width: 100%;
-}
-
-.white-card.rarity-star1 .card-rarity,
-.white-card.rarity-star2 .card-rarity,
-.white-card.rarity-star3 .card-rarity {
-    color: #ffcc00;
-    /* Yellow for star rarities */
-}
-
-.card-number {
-    position: absolute;
-    top: 45%;
-    /* Center vertically approx */
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    text-align: center;
-    color: #000;
-    pointer-events: none;
-    z-index: 10;
-    display: flex;
-    justify-content: center;
-    align-items: baseline;
-    /* Align by text baseline */
-}
-
-.num-current {
-    font-size: 32px;
-    font-weight: bold;
-}
-
-.num-separator {
-    font-size: 32px;
-    font-weight: bold;
-    margin: 0 2px;
-}
-
-.num-total {
-    font-size: 16px;
-    font-weight: bold;
-}
-
-/* Settings Screen */
-.settings-screen {
-    position: fixed;
-    /* Use fixed to ensure it covers the entire viewport on mobile */
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 480px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    background-color: rgba(255, 255, 255, 0.98);
-    z-index: 100;
-    padding: 20px;
-    padding-bottom: 80px;
-    /* Extra padding at bottom for mobile browser UI */
-    box-sizing: border-box;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    /* Smooth scrolling for iOS */
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-}
-
-.settings-screen h2 {
-    margin: 10px 0;
-    color: #333;
-    flex-shrink: 0;
-}
-
-.setting-item {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.rarity-settings-wrapper {
-    width: 100%;
-    max-width: 400px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.rarity-settings-wrapper h3 {
-    margin: 10px 0 5px 0;
-    font-size: 1rem;
-    color: #555;
-    text-align: left;
-    border-left: 4px solid #333;
-    padding-left: 10px;
-}
-
-.rarity-settings-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    /* Reduced gap inside */
-    width: 100%;
-}
-
-.rarity-section {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    background-color: #f9f9f9;
-}
-
-.rarity-section h3 {
-    margin: 0 0 10px 0;
-    font-size: 1rem;
-    text-align: center;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 5px;
-}
-
-.rarity-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* Center the whole row content */
-    margin-bottom: 8px;
-}
-
-.rarity-row label {
-    /* Use standardized class if possible, but keep specific selector for safety */
-    font-weight: bold;
-    color: #555;
-    width: 80px;
-    /* Fixed width for alignment */
-    text-align: right;
-    /* Right align as requested */
-    margin-right: 10px;
-}
-
-/* Ensure js-created class matches or override */
-.rarity-label {
-    width: 80px !important;
-    text-align: right !important;
-    margin-right: 10px !important;
-    font-weight: bold;
-}
-
-/* Desired Match Highlight */
-.desired-match {
-    color: #ff3333;
-    /* Bright Red */
-}
-
-.rarity-row input.input-count {
-    width: 60px;
-    margin-right: 5px;
-}
-
-.rarity-row .desired-group {
-    display: flex;
-    align-items: center;
-    margin-left: 15px;
-}
-
-.rarity-row .desired-group span {
-    white-space: nowrap;
-    /* Prevent vertical stacking */
-    margin-right: 0.5em;
-    /* 0.5 character spacing */
-    min-width: 45px;
-    /* Ensure space for text */
-    text-align: right;
-    font-size: 0.9rem;
-    flex-shrink: 0;
-    /* Prevent shrinking */
-}
-
-.rarity-row .input-desired {
-    width: 100px;
-    /* Reduced width */
-}
-
-.rarity-row span {
-    color: #777;
-    font-size: 0.9rem;
-    width: 15px;
-}
-
-.settings-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    /* Reduced bottom margin */
-    flex-shrink: 0;
-}
-
-.btn-preset {
-    margin-bottom: 20px;
-    width: 100%;
-    max-width: 200px;
-}
-
-/* Background Color Picker */
-.bg-color-picker-section {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-    border-top: 1px solid #eee;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 10px;
-}
-
-.bg-color-picker-section label {
-    font-size: 0.9rem;
-    color: #555;
-    font-weight: bold;
-    flex-shrink: 0;
-}
-
-#bgColorInput {
-    width: 44px;
-    height: 36px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 2px;
-    cursor: pointer;
-    background: none;
-}
-
-/* Preset Modal */
-.preset-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 200;
-    /* Higher than settings */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.preset-modal-content {
-    background-color: #fff;
-    padding: 20px;
+    background-color: var(--card-bg);
+    padding: 16px;
     border-radius: 12px;
-    width: 90%;
-    max-width: 350px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
+}
+
+/* キャラクターボタン */
+.char-btn {
+    /* 長方形に近づけるための比率。少し横長か正方形に数値を調整 */
+    aspect-ratio: 4 / 3;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    /* 少し小さめに調整 */
+    font-weight: 500;
+    color: #444444;
+    /* 色を少し濃く */
+    position: relative;
+    padding: 2px;
+    text-align: center;
+    overflow: hidden;
+    /* テキストがはみ出ないように */
+    word-break: break-all;
+    /* 長い単語を折り返す */
+}
+
+/* 最下段（7行目）の配置調整
+   13列×6行 = 78
+   79番目の要素は7行目の先頭になります。
+   左右2つを欠けさせるため、左から3列目（grid-column-start: 3）から開始します。
+*/
+.char-btn:nth-child(79) {
+    grid-column-start: 3;
+}
+
+/* 画像ありボタン: flex方向を縦に変更 */
+.char-btn.has-image {
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* キャラクター画像 */
+.char-img {
+    width: 100%;
+    flex: 1;
+    object-fit: cover;
+    /* アスペクト比を保ちつつトリミング */
+    object-position: center;
+    /* 画像を中央で切り取る */
+    display: block;
+    min-height: 0;
+    /* flex子要素の縮小を許可 */
+}
+
+/* 画像ありボタンのテキストラベル */
+.char-btn.has-image .char-label {
+    font-size: 10px;
+    padding: 2px 4px;
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+    /* 1行入りに固定 */
+    overflow: hidden;
+    /* はみ出しは非表示 */
+    width: 100%;
+    flex-shrink: 0;
+}
+
+/* 画像なしボタンのラベル（通常のテキスト表示） */
+.char-btn:not(.has-image) .char-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #444444;
+    word-break: break-all;
+    text-align: center;
+}
+
+/* ホバー時のエフェクト */
+.char-btn:hover:not(.settings-btn) {
+    transform: scale(1.05);
+    border-color: var(--accent-red);
+    box-shadow: 0 2px 8px rgba(229, 62, 62, 0.2);
+    z-index: 10;
+    background-color: var(--hover-bg);
+    color: var(--accent-red);
+    font-weight: bold;
+}
+
+/* 設定ボタン専用スタイル（機能がない状態） */
+.char-btn.settings-btn {
+    cursor: default;
+    background-color: #f0f0f0;
+    color: #888888;
+    border-style: dashed;
+}
+
+/* 選択時の状態 */
+.char-btn.selected {
+    background-color: var(--accent-red);
+    color: #ffffff;
+    border-color: var(--accent-red);
+    transform: scale(1.05);
+    z-index: 5;
+    box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+}
+
+/* --- 勝率計算・記録ページ用スタイル --- */
+.match-container {
+    width: 100%;
+    max-width: 600px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-color);
+    padding: 24px;
+    margin-top: 20px;
+}
+
+.match-header {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    align-items: center;
+    margin-bottom: 24px;
 }
 
-.preset-modal-content h3 {
-    margin: 0;
-    text-align: center;
-    color: #333;
-}
-
-.preset-actions {
-    display: flex;
-    gap: 5px;
-}
-
-.preset-actions input {
-    flex: 1;
+.match-header .back-btn {
+    align-self: flex-start;
+    margin-bottom: 16px;
+    background-color: transparent;
+    border: none;
     padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    color: #0066cc;
+    font-size: 14px;
+    cursor: pointer;
 }
 
-.preset-list {
+.match-header .back-btn:hover {
+    text-decoration: underline;
+    background-color: transparent;
+}
+
+.vs-text {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-color);
+    text-align: center;
+    margin: 0;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.result-btn {
+    flex: 1;
+    padding: 16px;
+    font-size: 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    color: white;
+}
+
+.result-btn:active {
+    transform: translateY(2px);
+}
+
+.win-btn {
+    background-color: #38a169;
+    box-shadow: 0 4px 0 #276749;
+}
+
+.win-btn:active {
+    box-shadow: 0 0 0 #276749;
+}
+
+.loss-btn {
+    background-color: #e53e3e;
+    box-shadow: 0 4px 0 #c53030;
+}
+
+.loss-btn:active {
+    box-shadow: 0 0 0 #c53030;
+}
+
+.stats-section {
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.stats-section h3,
+.history-section h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #444;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+}
+
+.clear-all-btn {
+    background-color: transparent;
+    border: 1px solid #e53e3e;
+    color: #e53e3e;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clear-all-btn:hover {
+    background-color: #e53e3e;
+    color: white;
+}
+
+.stats-cards {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+.stat-card {
+    background-color: #f7fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #718096;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.history-list {
     list-style: none;
     padding: 0;
     margin: 0;
     max-height: 300px;
     overflow-y: auto;
-    border: 1px solid #eee;
-    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
 }
 
-.preset-color-swatch {
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    flex-shrink: 0;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.preset-item {
+.history-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px;
-    border-bottom: 1px solid #eee;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #fff;
 }
 
-.preset-item:last-child {
+.history-item:last-child {
     border-bottom: none;
 }
 
-.preset-name {
-    font-weight: bold;
-    flex: 1;
+.history-date {
+    color: #718096;
+    font-size: 14px;
 }
 
-.preset-item-buttons {
+.history-right {
     display: flex;
-    gap: 5px;
+    align-items: center;
+    gap: 12px;
 }
 
-.preset-btn-sm {
-    padding: 4px 8px;
-    font-size: 0.75rem;
+.delete-history-btn {
+    background-color: #f7fafc;
+    border: 1px solid #cbd5e0;
+    color: #718096;
     border-radius: 4px;
-    border: 1px solid #ccc;
-    background-color: #f9f9f9;
-    cursor: pointer;
-}
-
-.preset-btn-sm:hover {
-    background-color: #ececec;
-}
-
-.btn-load {
-    color: #007bff;
-    border-color: #007bff;
-}
-
-.btn-overwrite {
-    color: #28a745;
-    border-color: #28a745;
-}
-
-.btn-delete {
-    color: #dc3545;
-    border-color: #dc3545;
-}
-
-/* Confirm Modal specific styles */
-#confirmModal {
-    z-index: 300;
-    /* Higher than preset modal (200) */
-}
-
-.confirm-modal-content {
-    max-width: 300px;
-    text-align: center;
-}
-
-
-
-.reveal-controls button {
-    flex: 1;
-    padding: 12px 10px;
-    /* Uniform padding */
-    font-size: 1rem;
-    border-radius: 25px;
-    border: 1px solid #ddd;
+    padding: 4px 8px;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 48px;
-    max-width: 200px;
-    /* Prevent buttons from stretching too wide */
-    /* Fixed height for consistency */
 }
 
-/* Specific overrides for reveal context if needed, otherwise rely on id/classes but override geometry */
-#btnReopen {
-    background: linear-gradient(to bottom, #ffffff, #f0f0f0);
-    color: #333;
-    font-weight: 600;
+.delete-history-btn:hover {
+    background-color: #feb2b2;
+    border-color: #e53e3e;
+    color: #c53030;
 }
 
-#btnReopen:hover {
-    background: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-#btnBackToHome {
-    background: transparent;
-    color: #666;
-    border-color: #ddd;
-}
-
-#btnBackToHome:hover {
-    background: #f9f9f9;
-    color: #333;
-    transform: translateY(-2px);
-}
-
-.confirm-actions {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 10px;
-}
-
-.btn-danger {
-    background: linear-gradient(to bottom, #ffeeee, #ffd0d0);
-    color: #dc3545;
-    border-color: #dc3545;
-}
-
-.btn-danger:hover {
-    background: #ffcccc;
-}
-
-/* Staggered animation delays for cards */
-.white-card:nth-child(1) {
-    animation-delay: 0.1s;
-}
-
-.white-card:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-.white-card:nth-child(3) {
-    animation-delay: 0.3s;
-}
-
-.white-card:nth-child(4) {
-    animation-delay: 0.4s;
-}
-
-.white-card:nth-child(5) {
-    animation-delay: 0.5s;
-}
-
-.white-card:nth-child(6) {
-    animation-delay: 0.6s;
-}
-
-@keyframes popIn {
-    from {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Mobile Layout Adjustments */
-@media (max-width: 480px) {
-    .main-content {
-        justify-content: flex-start;
-        padding-top: 20px;
-    }
-
-    .pack-container {
-        margin-top: 0;
-        margin-bottom: 15px;
-    }
-
-    .controls-container {
-        margin-top: -10px;
-        /* Pulled up slightly but avoiding the pack image overlap */
-        z-index: 5;
-    }
-
-    /* Fix potential scroll clipping in settings on mobile */
-    .settings-screen {
-        justify-content: flex-start;
-        /* Ensure content starts from top */
-        padding-top: 30px;
-    }
-
-    /* Resizing card numbers to prevent overflow on mobile (80px cards) */
-    .num-current {
-        font-size: 26px;
-    }
-
-    .num-separator {
-        font-size: 26px;
-    }
-
-    .num-total {
-        font-size: 14px;
-    }
-
-    /* Decreasing button height/spacing on mobile to lower them */
-    .reveal-controls {
-        padding: 10px 0 20px 0;
-        /* Lower the buttons */
-    }
-
-    /* Reverting bottom padding for grids to clear the fixed footer on mobile */
-    .cards-grid {
-        padding-bottom: 350px !important;
-        /* Original value restored */
-    }
-
-    .card-reveal-screen.is-single-pack .cards-grid {
-        padding-top: 10px !important;
-        /* Reduce top padding to help centering */
-        padding-bottom: 120px !important;
-        /* Balance with footer space */
-        margin: auto 0;
-        /* Help vertical centering in flex container */
-    }
-
-    /* Prevent labels from being cut off on mobile screens */
-    .desired-pack-label,
-    .rare-pack-label {
-        left: -10px;
-    }
-
-    /* Reduce input width on mobile to prevent "枚" from wrapping */
-    .rarity-row input.input-count {
-        width: 40px;
-        /* Reduced from default 60px */
-    }
-}
-
-/* Desired Pack Label (Appears above the first card of a pack) */
-.desired-pack-label {
-    position: absolute;
-    top: -28px;
-    left: -60px;
-    /* Shifted to the left */
-    color: #ff3333;
-    /* Red color */
+.history-result.win {
+    color: #38a169;
     font-weight: bold;
-    font-size: 14px;
-    z-index: 5;
-    /* Lowered from 1000 to 5 to stay behind footer (z-index 10) */
-    text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
-    /* White outline for readability */
-    white-space: nowrap;
-    pointer-events: none;
 }
 
-/* Rare Pack Label (Appears above the desired card label if present) */
-.rare-pack-label {
-    position: absolute;
-    top: -45px;
-    /* Positioned above the desired card label */
-    left: -60px;
-    color: #ff8800;
-    /* Orange color */
+.history-result.win {
+    color: #38a169;
     font-weight: bold;
-    font-size: 14px;
-    z-index: 5;
-    text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
-    /* White outline for readability */
+}
+
+.history-result.loss {
+    color: #e53e3e;
+    font-weight: bold;
+}
+
+/* ランキング用タブとリスト */
+.ranking-tabs .inactive-tab {
+    background-color: #cbd5e0;
+    color: #4a5568;
+    box-shadow: 0 4px 0 #a0aec0;
+}
+
+.ranking-tabs .inactive-tab:active {
+    box-shadow: 0 0 0 #a0aec0;
+}
+
+.ranking-list {
+    max-height: 400px;
+}
+
+.ranking-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #fff;
+}
+
+.ranking-left-group {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.ranking-rank {
+    font-weight: bold;
+    font-size: 16px;
+    color: #4a5568;
+    width: 36px;
+    flex-shrink: 0;
+}
+
+.ranking-img-wrapper {
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.ranking-img {
+    width: 24px;
+    height: 24px;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 4px;
+    /* 四角ベースのまま角を少し丸化 */
+}
+
+/* ヘッダー画像表示用 */
+.vs-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.header-img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+}
+
+.ranking-name {
+    font-weight: bold;
+    color: var(--text-color);
+    font-size: 15px;
     white-space: nowrap;
-    pointer-events: none;
+    overflow: hidden;
+    text-overflow: clip;
 }
 
-/* Wrapper for the first card to hold the label safely outside animations */
-.first-card-wrapper {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    /* Align card to bottom like in grid */
+.ranking-rate {
+    font-weight: bold;
+    font-size: 18px;
+    color: #38a169;
 }
 
-/* God Pack Mode Selector */
-.god-pack-mode-selector {
+/* 詳細勝率画面用のスタイル */
+.detail-overview {
     display: flex;
-    gap: 15px;
-    justify-content: center;
+    justify-content: space-around;
+    background-color: #f7fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+.detail-overview-item {
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    margin-top: 10px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
 }
 
-.god-pack-mode-selector label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+.detail-overview-label {
+    font-size: 14px;
+    color: #4a5568;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.detail-overview-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #3182ce;
+    margin-bottom: 8px;
+    /* 内訳ボタンとの余白 */
+}
+
+/* 内訳ボタン */
+.breakdown-btn {
+    background-color: transparent;
+    border: 1px solid #3182ce;
+    color: #3182ce;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
     cursor: pointer;
-    font-size: 0.9rem;
-    color: #555;
-    transition: color 0.2s ease;
+    font-weight: bold;
+    transition: all 0.2s ease;
 }
 
-.god-pack-mode-selector label:hover {
-    color: #333;
+.breakdown-btn:hover {
+    background-color: #3182ce;
+    color: white;
 }
 
-.god-pack-mode-selector input[type="radio"] {
-    cursor: pointer;
-    width: 16px;
-    height: 16px;
+/* 内訳インライン表示領域用のスタイル */
+.breakdown-inline-container {
+    background-color: #f7fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 24px;
+    padding: 16px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-/* Mobile Layout Fixes (Must be at the end to override base styles) */
-@media (max-width: 480px) {
-
-    .desired-pack-label,
-    .rare-pack-label {
-        left: -10px !important;
-        /* Force override for mobile */
-    }
-
-    /* Increase bottom padding for 10-pack results on mobile */
-    .cards-grid {
-        padding-bottom: 420px;
-    }
+.breakdown-inline-header {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #cbd5e0;
 }
 
-/* Usage Modal Styles */
-.usage-modal {
+.breakdown-inline-header h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.breakdown-list {
+    margin: 0;
+    max-height: 250px;
+    overflow-y: auto;
+    border: none;
+}
+
+/* 内訳リスト内の余白調整用のクラス */
+.breakdown-list-img {
+    margin-left: 16px;
+}
+
+.breakdown-list-name {
+    margin-left: 12px;
+}
+
+/* ローディング画面エリア */
+.loading-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-    /* Highest z-index */
-    animation: fadeIn 0.2s ease-out;
-}
-
-.usage-content {
-    background-color: #fff;
-    width: 90%;
-    max-width: 600px;
-    height: 80%;
-    max-height: 700px;
-    border-radius: 12px;
-    padding: 20px;
-    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(255, 255, 255, 0.85);
+    /* 半透明の白背景 */
     display: flex;
     flex-direction: column;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    /* 最前面に表示 */
 }
 
-.close-modal {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #666;
-}
-
-.usage-content h2 {
-    margin-top: 0;
-    text-align: center;
-    font-size: 1.2rem;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
-}
-
-.usage-tabs {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 15px;
-    border-bottom: 1px solid #ddd;
-    overflow-x: auto;
-    /* Allow scrolling on small screens */
-    flex-shrink: 0;
-    padding-bottom: 5px;
-}
-
-.tab-btn {
-    padding: 8px 12px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: #666;
-    border-bottom: 2px solid transparent;
-    white-space: nowrap;
-    transition: all 0.2s;
-}
-
-.tab-btn.active {
-    color: #007bff;
-    border-bottom-color: #007bff;
-    font-weight: bold;
-}
-
-.tab-content {
+.loading-overlay.hidden {
     display: none;
-    overflow-y: auto;
-    flex-grow: 1;
-    padding: 10px;
-    line-height: 1.6;
 }
 
-.tab-content.active {
-    display: block;
-    animation: fadeIn 0.3s;
+/* スピナーのアニメーション */
+.loader {
+    border: 6px solid #e2e8f0;
+    /* 薄いグレー枠 */
+    border-top: 6px solid #3182ce;
+    /* 進行状況を示す青色部 */
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    /* 無限に回転 */
+    margin-bottom: 12px;
 }
 
-.tab-content h3 {
-    font-size: 1rem;
-    margin-top: 0;
-    color: #333;
-    border-left: 4px solid #007bff;
-    padding-left: 8px;
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
-.tab-content ul {
-    padding-left: 20px;
+/* レスポンシブ対応: 画面が小さいときは隙間を減らす */
+@media (max-width: 900px) {
+    .roster {
+        gap: 2px;
+        padding: 8px;
+    }
+
+    .char-btn {
+        font-size: 10px;
+    }
 }
 
-.tab-content li {
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-    color: #444;
-}
+/* モバイル: ボタン4列レイアウトに切り替え */
+@media (max-width: 600px) {
+    .roster {
+        /* 4列グリッドに変更 */
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        padding: 8px;
+    }
 
-.usage-img {
-    display: block;
-    width: 40%;
-    /* Reduced size */
-    max-width: 300px;
-    height: auto;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    margin: 10px auto;
-    /* Center the image */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    /* PC版で使っている最下段の位置調整をリセット */
+    .char-btn:nth-child(79) {
+        grid-column-start: auto;
+    }
+
+    .char-btn {
+        font-size: 13px;
+        /* 4列なのでテキストが読みやすいサイズに */
+    }
+
+    /* 見出しテキストと画像のサイズ縮小 */
+    .vs-text {
+        font-size: 16px;
+    }
+
+    .vs-header-content {
+        gap: 8px;
+        /* 画像とテキストの隙間を減らす */
+    }
+
+    .header-img {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* 詳細勝率画面・内訳リストの余白を縮小 */
+    .breakdown-list-img {
+        margin-left: 6px;
+        margin-right: 6px;
+        /* 元の ranking-img-wrapper は 12px なので上書き */
+    }
+
+    .breakdown-list-name {
+        margin-left: 2px;
+    }
 }

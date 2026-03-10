@@ -1,1550 +1,883 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Buttons
-    const btnOpen1 = document.getElementById('btnOpen1');
-    const btnOpen10 = document.getElementById('btnOpen10');
-    const btnReopen = document.getElementById('btnReopen');
-    const btnBackToHome = document.getElementById('btnBackToHome');
-    const btnUsage = document.getElementById('btnUsage');
+    // ---- DOM要素の取得 ----
+    const rosterView = document.getElementById('roster-view');
+    const rosterContainer = document.getElementById('character-roster');
+    const instructionText = document.getElementById('instruction-text');
+    const backBtn = document.getElementById('back-btn');
+    const selectedPlayerDisplay = document.getElementById('selected-player-display');
+    const playerNameText = document.getElementById('player-name-text');
 
-    // Screens elements
-    const packContainer = document.getElementById('packContainer');
-    const packTop = document.getElementById('packTop');
-    const controlsContainer = document.getElementById('controlsContainer');
-    const cardRevealScreen = document.getElementById('cardRevealScreen');
-    const cardsGrid = document.getElementById('cardsGrid');
-    const sessionStatsBar = document.getElementById('sessionStatsBar');
-    const desiredStatsBar = document.getElementById('desiredStatsBar');
+    // 勝敗記録画面 (旧：勝率計算・記録ページ / マッチ画面)
+    const matchView = document.getElementById('match-view');
+    const backToRosterBtn = document.getElementById('back-to-roster-btn');
+    const vsText = document.getElementById('vs-text');
+    const winBtn = document.getElementById('win-btn');
+    const lossBtn = document.getElementById('loss-btn');
+    const rate10El = document.getElementById('rate-10');
+    const rate50El = document.getElementById('rate-50');
+    const historyCountEl = document.getElementById('history-count');
+    const historyListEl = document.getElementById('history-list');
+    const clearAllHistoryBtn = document.getElementById('clear-all-history-btn');
 
-    // Settings elements
-    const btnProb = document.getElementById('btnProb');
-    const settingsScreen = document.getElementById('settingsScreen');
-    const probInput = document.getElementById('probInput');
-    const godProbInput = document.getElementById('godProbInput');
-    const btnSaveSettings = document.getElementById('btnSaveSettings');
-    const btnCancelSettings = document.getElementById('btnCancelSettings');
+    // ランキング画面用
+    const rankingView = document.getElementById('ranking-view');
+    const backFromRankingBtn = document.getElementById('back-from-ranking-btn');
+    const tab10Btn = document.getElementById('tab-10-btn');
+    const tab50Btn = document.getElementById('tab-50-btn');
+    const rankingListEl = document.getElementById('ranking-list');
+    // 詳細勝率画面用
+    const detailView = document.getElementById('detail-view');
+    const backFromDetailBtn = document.getElementById('back-from-detail-btn');
+    const detailCharName = document.getElementById('detail-char-name');
+    const detailRate10 = document.getElementById('detail-rate-10');
+    const detailRate50 = document.getElementById('detail-rate-50');
+    const detailRankingListEl = document.getElementById('detail-ranking-list');
 
-    // Header title element
-    const appHeaderTitle = document.getElementById('appHeaderTitle');
+    // 内訳インライン用のDOM取得
+    const breakdown10Btn = document.getElementById('breakdown-10-btn');
+    const breakdown50Btn = document.getElementById('breakdown-50-btn');
+    const breakdownInlineContainer = document.getElementById('breakdown-inline-container');
+    const breakdownTitle = document.getElementById('breakdown-title');
+    const breakdownList = document.getElementById('breakdown-list');
 
-    // Usage Modal elements
-    const usageModal = document.getElementById('usageModal');
-    const btnCloseUsage = document.getElementById('btnCloseUsage');
-    const usageTabs = document.querySelectorAll('.tab-btn');
-    const usageContents = document.querySelectorAll('.tab-content');
+    // 現在表示中の「内訳」の状態管理
+    let activeBreakdownType = null; // '10' or '50' or null
 
-    // Background Color Picker elements
-    const bgColorInput = document.getElementById('bgColorInput');
-    const btnResetBgColor = document.getElementById('btnResetBgColor');
-    const packBgTrapezoid = document.querySelector('.pack-bg-trapezoid');
-    const BG_COLOR_DEFAULT = '#d35cf7';
+    // ローディング画面用
+    const loadingOverlay = document.getElementById('loading-overlay');
 
-    if (bgColorInput && packBgTrapezoid) {
-        // Load saved color
-        const savedBgColor = localStorage.getItem('bgColor');
-        if (savedBgColor) {
-            bgColorInput.value = savedBgColor;
-            packBgTrapezoid.style.backgroundColor = savedBgColor;
-        }
-
-        bgColorInput.addEventListener('input', () => {
-            packBgTrapezoid.style.backgroundColor = bgColorInput.value;
-            // Deferred saving to localStorage until Save Settings
+    // ---- ユーティリティ ----
+    function autoShrinkText(element, defaultSize = 15, minSize = 9) {
+        requestAnimationFrame(() => {
+            let fontSize = defaultSize;
+            element.style.fontSize = fontSize + 'px';
+            while (element.scrollWidth > element.offsetWidth && fontSize > minSize) {
+                fontSize -= 0.5;
+                element.style.fontSize = fontSize + 'px';
+            }
         });
     }
 
-    if (btnResetBgColor && packBgTrapezoid) {
-        btnResetBgColor.addEventListener('click', () => {
-            packBgTrapezoid.style.backgroundColor = BG_COLOR_DEFAULT;
-            if (bgColorInput) bgColorInput.value = BG_COLOR_DEFAULT;
-            // Deferred localStorage remove until Save Settings
-        });
-    }
-
-    // State
-    // State
-    let sixCardProb = 8; // Default 8%
-    let godPackProb = 0.05; // Default 0.05% (God Pack)
-
-    // Rarity Counts (Default)
-    let rarityCounts = {
-        '👑': 1,
-        '🌈🌈': 4,
-        '🌈': 10,
-        '☆☆☆': 1,
-        '☆☆': 14,
-        '☆': 7,
-        '♢♢♢♢': 6,
-        '♢♢♢': 6,
-        '♢♢': 20,
-        '♢': 25
-    };
-
-    // Desired Numbers (Default empty)
-    let rarityDesired = {
-        '👑': [],
-        '🌈🌈': [],
-        '🌈': [],
-        '☆☆☆': [],
-        '☆☆': [],
-        '☆': [],
-        '♢♢♢♢': [],
-        '♢♢♢': [],
-        '♢♢': [],
-        '♢': []
-    };
-
-    // State for Re-open
-    let lastOpenedCount = 1;
-
-    // Session Stats State
-    let sessionPackCount = 0;
-
-    // Session Desired Card Stats: { 'rarity-number': count }
-    let sessionDesiredCards = {};
-
-    // God Pack Mode: 'uniform', 'no-rainbow', 'custom'
-    let godPackMode = 'no-rainbow'; // Default: exclude rainbow cards
-
-    // Pending preset: holds a preset that was loaded but not yet saved
-    let _pendingPreset = null;
-
-    // Current setting name for display
-    let currentSettingName = localStorage.getItem('pokePackSettingName') || '設定なし';
-
-    const settingNameLabel = document.getElementById('settingNameLabel');
-    function updateSettingNameLabel(name) {
-        currentSettingName = name;
-        localStorage.setItem('pokePackSettingName', name);
-        if (settingNameLabel) settingNameLabel.textContent = name;
-    }
-
-    // Function to handle pack opening
-    function openPack(count) {
-        lastOpenedCount = count; // Memorize count
-        sessionPackCount = count; // Reset/Init session count for new open from home
-        sessionDesiredCards = {}; // Reset desired card tracking
-
-        if (packContainer.classList.contains('shake') || packTop.classList.contains('torn')) {
-            return; // Animation in progress
-        }
-
-        // Ensure reveal screen is hidden and pack is visible (for re-open case)
-        cardRevealScreen.classList.add('hidden');
-        packContainer.classList.remove('hidden');
-        // controlsContainer state is preserved (visible if home, hidden if reopen)
-
-        // 1. Shake animation
-        packContainer.classList.add('shake');
-
-        // 2. Tear animation after shake
-        setTimeout(() => {
-            packContainer.classList.remove('shake');
-            packTop.classList.add('torn');
-
-            // 3. Transition to card reveal screen
-            setTimeout(() => {
-                showCardRevealScreen(count);
-
-                // Reset pack state in background
-                setTimeout(() => {
-                    packTop.classList.remove('torn');
-                }, 500);
-            }, 800);
-
-        }, 500);
-    }
-
-    function reopenPack() {
-        // Increment session count
-        sessionPackCount += lastOpenedCount;
-
-        // Skip animation: Directly show results
-        showCardRevealScreen(lastOpenedCount);
-
-        // Reset pack state so it's fresh when going back to home
-        packContainer.classList.remove('shake');
-        packTop.classList.remove('torn');
-    }
-
-    function showCardRevealScreen(packCount) {
-        // Hide home screen elements
-        packContainer.classList.add('hidden');
-        controlsContainer.classList.add('hidden');
-
-        // Show Stats Bars (Fixed position)
-        if (sessionStatsBar) {
-            sessionStatsBar.classList.remove('hidden');
-            document.querySelector('.main-content').classList.add('has-stats');
-        }
-        if (desiredStatsBar) {
-            desiredStatsBar.classList.remove('hidden');
-        }
-        if (btnUsage) {
-            btnUsage.classList.add('hidden');
-        }
-
-        // Change header title to current setting name
-        if (appHeaderTitle) {
-            appHeaderTitle.textContent = currentSettingName;
-        }
-
-        // Show card reveal screen
-        cardRevealScreen.classList.remove('hidden');
-        document.querySelector('.app-container').classList.add('app-results-view');
-
-        // Update Button Text based on pack count
-        if (packCount > 1) {
-            btnReopen.textContent = 'もう一回10パック開封';
-            cardRevealScreen.classList.remove('is-single-pack');
-        } else {
-            btnReopen.textContent = 'もう一度開封する';
-            cardRevealScreen.classList.add('is-single-pack');
-        }
-
-        // Generate cards for N packs
-        generateCards(packCount);
-
-        // Update Stats Bar
-        updateStatsBar();
-        updateDesiredStatsBar();
-
-        // Reset scroll position to top (Done after generation to work for both re-open and home return)
-        cardRevealScreen.scrollTop = 0;
-    }
-
-    function getRarity(table) {
-        const rand = Math.random() * 100;
-        let cumulative = 0;
-        for (const item of table) {
-            cumulative += item.rate;
-            if (rand < cumulative) {
-                return item.rarity;
-            }
-        }
-        return table[table.length - 1].rarity; // Fallback
-    }
-
-    function getGodPackCard() {
-        if (godPackMode === 'custom') {
-            // Mode 3: Custom probability using existing table
-            return getRarity(rarityTableGodPack);
-        }
-
-        // Mode 1 & 2: Uniform card probability
-        const targetRarities = godPackMode === 'uniform'
-            ? ['👑', '🌈🌈', '🌈', '☆☆☆', '☆☆', '☆']  // Mode 1: All cards
-            : ['👑', '☆☆☆', '☆☆', '☆'];                // Mode 2: No rainbow
-
-        // Build card pool from rarityCounts
-        const cardPool = [];
-        for (const rarity of targetRarities) {
-            const count = rarityCounts[rarity] || 0;
-            for (let i = 1; i <= count; i++) {
-                cardPool.push({ rarity, cardNum: i });
-            }
-        }
-
-        if (cardPool.length === 0) {
-            // Fallback if no cards available
-            return '♢';
-        }
-
-        // Select random card from pool
-        const selectedCard = cardPool[Math.floor(Math.random() * cardPool.length)];
-        return selectedCard.rarity;
-    }
-
-    function generateCards(packCount) {
-        cardsGrid.innerHTML = ''; // Clear existing
-
-        for (let p = 0; p < packCount; p++) {
-            // Priority 1: God Pack (0.05%)
-            // Priority 2: 6-Card Pack (User Setting %)
-            // Priority 3: Normal 5-Card Pack
-
-            const isGodPack = (Math.random() * 100) < godPackProb;
-            let isSixCards = false;
-
-            if (!isGodPack) {
-                isSixCards = (Math.random() * 100) < sixCardProb;
-            }
-
-            const cardNumInPack = isSixCards ? 6 : 5;
-
-            // For single pack, add cards directly to grid (original layout)
-            // For multiple packs, wrap each pack in a container
-            let container;
-            if (packCount === 1) {
-                container = cardsGrid; // Add directly to grid
-            } else {
-                container = document.createElement('div');
-                container.className = 'pack-result-row';
-            }
-
-            // [New] Variables to track desired card status for the current pack
-            let packHasDesired = false;
-            let firstCardInPack = null;
-
-            for (let i = 0; i < cardNumInPack; i++) {
-                const card = document.createElement('div');
-                card.className = 'white-card';
-
-                // Determine Rarity
-                let rarity = '';
-
-                if (isGodPack) {
-                    // God Pack Logic: Use mode-based selection
-                    rarity = getGodPackCard();
-                } else if (cardNumInPack === 5) {
-                    // 5-card pack logic
-                    if (i < 3) {
-                        rarity = '♢';
-                    } else if (i === 3) {
-                        rarity = getRarity(rarityTable4th);
-                    } else if (i === 4) {
-                        rarity = getRarity(rarityTable5th);
-                    }
-                } else {
-                    // 6-card pack logic
-                    if (i < 3) {
-                        rarity = '♢';
-                    } else if (i === 3) {
-                        // 4th card (Bottom Left)
-                        rarity = getRarity(rarityTable6Pack4th);
-                    } else if (i === 4) {
-                        // 5th card (Bottom Center)
-                        rarity = getRarity(rarityTable6Pack5th);
-                    } else if (i === 5) {
-                        // 6th card (Bottom Right)
-                        rarity = getRarity(rarityTable6Pack6th);
-                    }
-                }
-
-                // Apply rarity-specific CSS class for custom images
-                const rarityClassMap = {
-                    '👑': 'rarity-crown',
-                    '🌈🌈': 'rarity-rainbow2',
-                    '🌈': 'rarity-rainbow',
-                    '☆☆☆': 'rarity-star3',
-                    '☆☆': 'rarity-star2',
-                    '☆': 'rarity-star1',
-                    '♢♢♢♢': 'rarity-dia4',
-                    '♢♢♢': 'rarity-dia3'
-                };
-
-                if (rarityClassMap[rarity]) {
-                    card.classList.add(rarityClassMap[rarity]);
-                }
-
-                // Determine Card Number (1 to Max)
-                const maxCount = rarityCounts[rarity] || 99; // Default fallback
-                const cardNum = Math.floor(Math.random() * maxCount) + 1;
-
-                // Check if desired
-                const isDesired = rarityDesired[rarity] && rarityDesired[rarity].includes(cardNum);
-
-                // Create Number Label (Center)
-                const numberLabel = document.createElement('div');
-                numberLabel.className = 'card-number';
-
-                const currentSpan = document.createElement('span');
-                currentSpan.className = 'num-current';
-                currentSpan.textContent = cardNum;
-                if (isDesired) {
-                    currentSpan.classList.add('desired-match');
-                }
-
-                const sepSpan = document.createElement('span');
-                sepSpan.className = 'num-separator';
-                sepSpan.textContent = '/';
-
-                const totalSpan = document.createElement('span');
-                totalSpan.className = 'num-total';
-                totalSpan.textContent = maxCount;
-
-                numberLabel.appendChild(currentSpan);
-                numberLabel.appendChild(sepSpan);
-                numberLabel.appendChild(totalSpan);
-
-                card.appendChild(numberLabel);
-
-                // Create Rarity Label (Bottom)
-                const rarityLabel = document.createElement('div');
-                rarityLabel.className = 'card-rarity';
-                rarityLabel.textContent = rarity;
-                card.appendChild(rarityLabel);
-
-                // [New] Track the first card wrapper element
-                if (i === 0) {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'first-card-wrapper';
-                    wrapper.appendChild(card);
-                    container.appendChild(wrapper);
-                    firstCardInPack = wrapper; // Use wrapper as the target for the label
-                } else {
-                    container.appendChild(card);
-                }
-
-                // [New] Update pack desired status if this card is desired
-                if (isDesired) {
-                    packHasDesired = true;
-
-                    // Track this desired card for session stats
-                    const key = `${rarity}-${cardNum}`;
-                    if (!sessionDesiredCards[key]) {
-                        sessionDesiredCards[key] = { rarity, number: cardNum, count: 0 };
-                    }
-                    sessionDesiredCards[key].count++;
-                }
-            }
-
-            // [New] If the pack contains a desired card, append the label to the first card wrapper
-            if (packHasDesired && firstCardInPack) {
-                const label = document.createElement('div');
-                label.className = 'desired-pack-label';
-                label.textContent = 'ほしいカード！';
-                firstCardInPack.appendChild(label);
-            }
-
-            // [New] If the pack is a God Pack (rare pack), append the rare pack label
-            if (isGodPack && firstCardInPack) {
-                const rareLabel = document.createElement('div');
-                rareLabel.className = 'rare-pack-label';
-                rareLabel.textContent = 'レア封入！';
-                firstCardInPack.appendChild(rareLabel);
-            }
-
-            // For multiple packs, append the container to grid
-            if (packCount > 1) {
-                cardsGrid.appendChild(container);
-            }
-        }
-    }
-
-    // Rarity Definitions (Mutable for settings)
-    let rarityTable4th = [
-        { rarity: '👑', rate: 0.040 },
-        { rarity: '🌈🌈', rate: 0.333 },
-        { rarity: '🌈', rate: 0.714 },
-        { rarity: '☆☆☆', rate: 0.222 },
-        { rarity: '☆☆', rate: 0.500 },
-        { rarity: '☆', rate: 2.572 },
-        { rarity: '♢♢♢♢', rate: 1.666 },
-        { rarity: '♢♢♢', rate: 4.952 },
-        { rarity: '♢♢', rate: 89.001 }
+    // ---- キャラクター名リスト（全87個） ----
+    const characterList = [
+        "マリオ", "ドンキーコング", "リンク", "サムス", "ダークサムス", "ヨッシー", "カービィ", "フォックス",
+        "ピカチュウ", "ルイージ", "ネス", "キャプテン・ファルコン", "プリン", "ピーチ", "デイジー", "クッパ",
+        "アイスクライマー", "シーク", "ゼルダ", "ドクターマリオ", "ピチュー", "ファルコ", "マルス", "ルキナ",
+        "こどもリンク", "ガノンドロフ", "ミュウツー", "ロイ", "クロム", "Mr.ゲーム&ウォッチ", "メタナイト", "ピット",
+        "ブラックピット", "ゼロスーツサムス", "ワリオ", "スネーク", "アイク", "ポケモントレーナー", "ディディーコング",
+        "リュカ", "ソニック", "デデデ", "ピクミン&オリマー", "ルカリオ", "ロボット", "トゥーンリンク", "ウルフ",
+        "むらびと", "ロックマン", "Wii Fit トレーナー", "ロゼッタ&チコ", "リトル・マック", "ゲッコウガ", "パルテナ",
+        "パックマン", "ルフレ", "シュルク", "クッパJr.", "ダックハント", "リュウ", "ケン", "クラウド", "カムイ",
+        "ベヨネッタ", "インクリング", "リドリー", "シモン", "リヒター", "キングクルール", "しずえ", "ガオガエン",
+        "パックンフラワー", "ジョーカー", "勇者", "バンジョー&カズーイ", "テリー", "ベレト/ベレス", "ミェンミェン",
+        "スティーブ", "セフィロス", "ホムラヒカリ", "カズヤ", "ソラ", "Mii 格闘タイプ", "Mii 剣術タイプ", "Mii 射撃タイプ", "詳細勝率 / 全キャラ勝率"
     ];
 
-    let rarityTable5th = [
-        { rarity: '👑', rate: 0.160 },
-        { rarity: '🌈🌈', rate: 1.333 },
-        { rarity: '🌈', rate: 2.857 },
-        { rarity: '☆☆☆', rate: 0.888 },
-        { rarity: '☆☆', rate: 2.000 },
-        { rarity: '☆', rate: 10.288 },
-        { rarity: '♢♢♢♢', rate: 6.664 },
-        { rarity: '♢♢♢', rate: 19.810 },
-        { rarity: '♢♢', rate: 56.000 }
-    ];
+    const totalCharacters = characterList.length;
 
-    // 6-Card Pack Tables
-    let rarityTable6Pack4th = [ // Same as 5-pack 4th
-        { rarity: '👑', rate: 0.040 },
-        { rarity: '🌈🌈', rate: 0.333 },
-        { rarity: '🌈', rate: 0.714 },
-        { rarity: '☆☆☆', rate: 0.222 },
-        { rarity: '☆☆', rate: 0.500 },
-        { rarity: '☆', rate: 2.572 },
-        { rarity: '♢♢♢♢', rate: 1.666 },
-        { rarity: '♢♢♢', rate: 4.952 },
-        { rarity: '♢♢', rate: 89.001 }
-    ];
+    // ---- 状態管理 ----
+    let selectedPlayerId = null;
+    let selectedOpponentId = null;
+    let selectedPlayerBtn = null;
+    let selectedOpponentBtn = null;
+    let currentPhase = 'player'; // 'player' or 'opponent' or 'match' or 'ranking' or 'detail'
+    let currentMatchKey = '';
+    let currentRankingType = 10; // 10 or 50
 
-    let rarityTable6Pack5th = [ // Same as 5-pack 5th
-        { rarity: '👑', rate: 0.160 },
-        { rarity: '🌈🌈', rate: 1.333 },
-        { rarity: '🌈', rate: 2.857 },
-        { rarity: '☆☆☆', rate: 0.888 },
-        { rarity: '☆☆', rate: 2.000 },
-        { rarity: '☆', rate: 10.288 },
-        { rarity: '♢♢♢♢', rate: 6.664 },
-        { rarity: '♢♢♢', rate: 19.810 },
-        { rarity: '♢♢', rate: 56.000 }
-    ];
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzCuMj4AuzxZPs2fy8OW3Vs9A3m_OhKGcKyyoolv3ky12xITEHBg0VG-KoI83iVYh1z2w/exec';
+    let globalMatchData = {}; // 取得したデータを一時保存する変数
 
-    let rarityTable6Pack6th = [ // New table for bottom right in 6-pack
-        { rarity: '🌈🌈', rate: 10.0 },
-        { rarity: '🌈', rate: 20.0 },
-        { rarity: '☆', rate: 30.0 },
-        { rarity: '♢♢♢', rate: 40.0 }
-    ];
-
-    // God Pack Table (Used for all 5 cards)
-    let rarityTableGodPack = [
-        { rarity: '👑', rate: 3.030 },
-        { rarity: '🌈🌈', rate: 12.121 },
-        { rarity: '🌈', rate: 30.303 },
-        { rarity: '☆☆☆', rate: 3.030 },
-        { rarity: '☆☆', rate: 36.363 },
-        { rarity: '☆', rate: 15.151 }
-    ];
-
-    // Stats Logic
-    function updateStatsBar() {
-        const costHourglass = sessionPackCount * 12;
-        const costGold = sessionPackCount * 6;
-        const costYen = sessionPackCount * 150;
-
-        // Clear existing
-        sessionStatsBar.innerHTML = '';
-
-        // Helper to adjust number formatting if needed (currently plain)
-        // Format: _パック開封　__⌛　__💰　__円
-
-        const items = [
-            { text: `${sessionPackCount}パック開封` },
-            { text: `${costHourglass}⌛` },
-            { text: `${costGold}💰` },
-            { text: `${costYen}円` }
-        ];
-
-        items.forEach(item => {
-            const span = document.createElement('span');
-            span.className = 'stats-item';
-            span.textContent = item.text;
-            sessionStatsBar.appendChild(span);
-        });
-
-        // [New] Dynamic font sizing for mobile
-        adjustFontSizeToFit(sessionStatsBar);
+    // ---- GASとの通信処理 ----
+    // 全データ取得
+    async function loadHistoryData() {
+        try {
+            const response = await fetch(GAS_URL);
+            const data = await response.json();
+            globalMatchData = data;
+            return data;
+        } catch (e) {
+            console.error("データの読み込みに失敗しました", e);
+            return globalMatchData; // 失敗時はキャッシュを返す
+        }
     }
 
-    function updateDesiredStatsBar() {
-        // Clear existing
-        desiredStatsBar.innerHTML = '';
-
-        // Create left side label "ほしい!!"
-        const labelSpan = document.createElement('span');
-        labelSpan.className = 'desired-label';
-        labelSpan.textContent = 'ほしい!!';
-        desiredStatsBar.appendChild(labelSpan);
-
-        // Create container for stats items (to allow flex layout)
-        const itemsContainer = document.createElement('div');
-        itemsContainer.className = 'desired-items';
-        desiredStatsBar.appendChild(itemsContainer);
-
-        // Get all pulled desired cards and sort them
-        const pulledCards = Object.values(sessionDesiredCards).filter(card => card.count > 0);
-
-        if (pulledCards.length > 0) {
-            // Sort by rarity order
-            const rarityOrder = ['👑', '🌈🌈', '🌈', '☆☆☆', '☆☆', '☆', '♢♢♢♢', '♢♢♢', '♢♢', '♢'];
-            pulledCards.sort((a, b) => {
-                const rarityOrderIdx = (r) => rarityOrder.indexOf(r);
-                const rarityDiff = rarityOrderIdx(a.rarity) - rarityOrderIdx(b.rarity);
-                if (rarityDiff !== 0) return rarityDiff;
-                return a.number - b.number;
+    // データ送信（追加・削除など）
+    async function sendToGAS(payload) {
+        try {
+            await fetch(GAS_URL, {
+                method: "POST",
+                mode: 'no-cors', // CROSエラーを避けるためにno-corsを指定
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
+                body: JSON.stringify(payload)
             });
 
-            // Create display text for each pulled card
-            pulledCards.forEach(card => {
-                const cardSpan = document.createElement('span');
-                cardSpan.className = 'stats-item';
-                cardSpan.textContent = `${card.rarity}${card.number}×${card.count}`;
-                itemsContainer.appendChild(cardSpan);
-            });
-        } else {
-            // [New] Show "Nothing" message if no desired cards were pulled
-            const emptySpan = document.createElement('span');
-            emptySpan.className = 'empty-text';
-            emptySpan.textContent = '何もない…';
-            itemsContainer.appendChild(emptySpan);
-        }
-
-        // [New] Dynamic font sizing for mobile
-        adjustFontSizeToFit(desiredStatsBar);
-    }
-
-    // Helper: Dynamic font sizing for mobile (<= 480px)
-    function adjustFontSizeToFit(element) {
-        if (window.innerWidth > 480) {
-            element.style.fontSize = ''; // Reset on PC
-            return;
-        }
-
-        // Reset to default to measure correctly
-        element.style.fontSize = '0.95rem';
-        element.style.whiteSpace = 'nowrap'; // Ensure no wrapping for measurement
-
-        const scrollWidth = element.scrollWidth;
-        const clientWidth = element.clientWidth;
-
-        if (scrollWidth > clientWidth) {
-            const ratio = clientWidth / scrollWidth;
-            // Apply ratio with a slight buffer (0.95), minimum 0.5rem
-            let newSize = 0.95 * ratio * 0.95;
-            newSize = Math.max(newSize, 0.5);
-            element.style.fontSize = `${newSize}rem`;
-        }
-    }
-
-    function resetToHome() {
-        // Hide card screen
-        cardRevealScreen.classList.add('hidden');
-        document.querySelector('.app-container').classList.remove('app-results-view');
-
-        // Hide Stats Bars
-        if (sessionStatsBar) {
-            sessionStatsBar.classList.add('hidden');
-            document.querySelector('.main-content').classList.remove('has-stats');
-        }
-        if (desiredStatsBar) {
-            desiredStatsBar.classList.add('hidden');
-        }
-
-        // Reset scroll position for next time
-
-        // Reset scroll position for next time
-        cardRevealScreen.scrollTop = 0;
-
-        // Reset header title
-        if (appHeaderTitle) {
-            appHeaderTitle.textContent = 'パック開封シミュレータ';
-        }
-
-        // Show home screen elements
-        packContainer.classList.remove('hidden');
-        controlsContainer.classList.remove('hidden');
-        if (btnUsage) {
-            btnUsage.classList.remove('hidden');
-        }
-    }
-
-    // Settings Logic
-    const raritySettingsContainer = document.getElementById('raritySettingsContainer');
-
-    function renderRarityInputs(table, title, prefix) {
-        const section = document.createElement('div');
-        section.className = 'rarity-section';
-
-        const heading = document.createElement('h3');
-        heading.textContent = title;
-        section.appendChild(heading);
-
-        table.forEach((item, index) => {
-            const row = document.createElement('div');
-            row.className = 'rarity-row';
-
-            const label = document.createElement('label');
-            label.textContent = item.rarity;
-
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.step = '0.001';
-            input.min = '0';
-            input.max = '100';
-            input.value = item.rate;
-            input.id = `${prefix}_${index}`; // unique id
-
-            const unit = document.createElement('span');
-            unit.textContent = '%';
-
-            row.appendChild(label);
-            row.appendChild(input);
-            row.appendChild(unit);
-            section.appendChild(row);
-        });
-
-        return section;
-    }
-
-    function openSettings(presetToLoad) {
-        // If no preset was passed in, restore UI from current global state
-        if (!presetToLoad) {
-            probInput.value = sixCardProb;
-            godProbInput.value = godPackProb;
-
-            if (bgColorInput && packBgTrapezoid) {
-                const savedBgColor = localStorage.getItem('bgColor') || BG_COLOR_DEFAULT;
-                bgColorInput.value = savedBgColor;
-                packBgTrapezoid.style.backgroundColor = savedBgColor;
+            // 処理後に最新データを再取得して画面更新
+            // ※ no-corsだとレスポンスは読めない（opaqueになる）ため、そのままリロードする
+            await loadHistoryData();
+            if (currentPhase === 'match') {
+                renderMatchStats();
+            } else if (currentPhase === 'ranking') {
+                renderRanking();
             }
-        }
-        // Note: if presetToLoad is provided, applyPreset has already filled the inputs
-
-        // Regenerate rarity settings
-        raritySettingsContainer.innerHTML = '';
-
-        // 5-Card Pack Settings
-        const header5 = document.createElement('h2');
-        header5.textContent = '5枚封入時の設定';
-        header5.style.fontSize = '1.1rem';
-        header5.style.marginTop = '20px';
-        raritySettingsContainer.appendChild(header5);
-
-        raritySettingsContainer.appendChild(renderRarityInputs(rarityTable4th, '4枚目 (下段左)', 'r4'));
-        raritySettingsContainer.appendChild(renderRarityInputs(rarityTable5th, '5枚目 (下段右)', 'r5'));
-
-        // 6-Card Pack Settings
-        const header6 = document.createElement('h2');
-        header6.textContent = '6枚封入時の設定';
-        header6.style.fontSize = '1.1rem';
-        header6.style.marginTop = '20px';
-        raritySettingsContainer.appendChild(header6);
-
-        raritySettingsContainer.appendChild(renderRarityInputs(rarityTable6Pack4th, '4枚目 (下段左)', 'r6_4'));
-        raritySettingsContainer.appendChild(renderRarityInputs(rarityTable6Pack5th, '5枚目 (下段中)', 'r6_5'));
-        raritySettingsContainer.appendChild(renderRarityInputs(rarityTable6Pack6th, '6枚目 (下段右)', 'r6_6'));
-
-        // God Pack Settings
-        const headerGod = document.createElement('h2');
-        headerGod.textContent = 'レア封入の排出確率';
-        headerGod.style.fontSize = '1.1rem';
-        headerGod.style.marginTop = '20px';
-        raritySettingsContainer.appendChild(headerGod);
-
-        // God Pack Mode Selector (Radio Buttons)
-        const modeSelector = document.createElement('div');
-        modeSelector.className = 'god-pack-mode-selector';
-        modeSelector.id = 'godPackModeSelector';
-
-        const modes = [
-            { value: 'uniform', label: '全カード均等' },
-            { value: 'no-rainbow', label: '🌈系除外（デフォルト）' },
-            { value: 'custom', label: 'カスタム確率' }
-        ];
-
-        modes.forEach(mode => {
-            const label = document.createElement('label');
-            const radio = document.createElement('input');
-            radio.type = 'radio';
-            radio.name = 'godPackMode';
-            radio.value = mode.value;
-            radio.checked = (godPackMode === mode.value);
-
-            radio.addEventListener('change', () => {
-                godPackMode = mode.value;
-                updateGodPackInputsState();
-            });
-
-            label.appendChild(radio);
-            label.appendChild(document.createTextNode(' ' + mode.label));
-            modeSelector.appendChild(label);
-        });
-
-        raritySettingsContainer.appendChild(modeSelector);
-
-        const godInputsSection = renderRarityInputs(rarityTableGodPack, 'カスタム確率', 'god');
-        godInputsSection.id = 'godPackInputsSection';
-        raritySettingsContainer.appendChild(godInputsSection);
-
-        // Update inputs state based on current mode
-        updateGodPackInputsState();
-
-        packContainer.classList.add('hidden');
-        controlsContainer.classList.add('hidden');
-        settingsScreen.classList.remove('hidden');
-        // Auto-focus only, no select
-        setTimeout(() => probInput.focus(), 100);
-    }
-
-    function closeSettings() {
-        // If a preset was pending (loaded but not saved), revert global state
-        if (_pendingPreset) {
-            _pendingPreset = null;
-            // Reload last committed settings from localStorage
-            loadActiveSettings();
-        }
-
-        settingsScreen.classList.add('hidden');
-        packContainer.classList.remove('hidden');
-        controlsContainer.classList.remove('hidden');
-
-        if (packBgTrapezoid) {
-            const savedBgColor = localStorage.getItem('bgColor') || BG_COLOR_DEFAULT;
-            packBgTrapezoid.style.backgroundColor = savedBgColor;
+        } catch (e) {
+            console.error("データの送信に失敗しました", e);
+            alert("通信エラーが発生しました。（GASのURLやデプロイ設定をご確認ください）");
         }
     }
 
-    function updateGodPackInputsState() {
-        const godInputsSection = document.getElementById('godPackInputsSection');
-        if (!godInputsSection) return;
+    function addMatchResult(result) {
+        const timestamp = Date.now();
 
-        const inputs = godInputsSection.querySelectorAll('input[type="number"]');
-        const isCustomMode = (godPackMode === 'custom');
+        // 画面上には先行して反映させる（レスポンス待ちのラグ軽減）
+        if (!globalMatchData[currentMatchKey]) {
+            globalMatchData[currentMatchKey] = [];
+        }
+        globalMatchData[currentMatchKey].unshift({ d: timestamp, r: result });
+        renderMatchStats();
 
-        inputs.forEach(input => {
-            input.disabled = !isCustomMode;
-            input.style.opacity = isCustomMode ? '1' : '0.5';
-            input.style.cursor = isCustomMode ? 'text' : 'not-allowed';
+        // GASへ送信
+        sendToGAS({
+            action: "addMatch",
+            matchKey: currentMatchKey,
+            date: timestamp,
+            result: result
         });
     }
 
-    function updateTableFromInputs(table, prefix) {
-        table.forEach((item, index) => {
-            const input = document.getElementById(`${prefix}_${index}`);
-            if (input) {
-                const val = parseFloat(input.value);
-                if (!isNaN(val) && val >= 0) {
-                    item.rate = val;
-                }
-            }
-        });
-    }
+    function deleteMatchRecord(index) {
+        if (confirm("この対戦記録を消去しますか？")) {
+            const history = globalMatchData[currentMatchKey];
+            if (history && history.length > index) {
+                const target = history[index];
 
-    function saveSettings() {
-        // --- Snapshot before saving ---
-        const prevSixCardProb = sixCardProb;
-        const prevGodPackProb = godPackProb;
-        const prevGodPackMode = godPackMode;
-        const prevTable4th = JSON.stringify(rarityTable4th);
-        const prevTable5th = JSON.stringify(rarityTable5th);
-        const prevTable6_4 = JSON.stringify(rarityTable6Pack4th);
-        const prevTable6_5 = JSON.stringify(rarityTable6Pack5th);
-        const prevTable6_6 = JSON.stringify(rarityTable6Pack6th);
-        const prevTableGod = JSON.stringify(rarityTableGodPack);
+                // 画面上から先に消去
+                globalMatchData[currentMatchKey].splice(index, 1);
+                renderMatchStats();
 
-        // Save 6-card prob
-        const val = parseFloat(probInput.value);
-        if (!isNaN(val) && val >= 0 && val <= 100) {
-            sixCardProb = val;
-        } else {
-            alert('6枚封入率は0から100の間の数値を入力してください');
-            return;
-        }
-
-        // Save God Pack prob
-        const godVal = parseFloat(godProbInput.value);
-        if (!isNaN(godVal) && godVal >= 0 && godVal <= 100) {
-            godPackProb = godVal;
-        } else {
-            alert('レア封入率は0から100の間の数値を入力してください');
-            return;
-        }
-
-        // Save Rarity Tables (5 cards)
-        updateTableFromInputs(rarityTable4th, 'r4');
-        updateTableFromInputs(rarityTable5th, 'r5');
-
-        // Save Rarity Tables (6 cards)
-        updateTableFromInputs(rarityTable6Pack4th, 'r6_4');
-        updateTableFromInputs(rarityTable6Pack5th, 'r6_5');
-        updateTableFromInputs(rarityTable6Pack6th, 'r6_6');
-
-        // Save God Pack Table
-        updateTableFromInputs(rarityTableGodPack, 'god');
-
-        if (bgColorInput) {
-            const newColor = bgColorInput.value;
-            if (newColor === BG_COLOR_DEFAULT) {
-                localStorage.removeItem('bgColor');
-            } else {
-                localStorage.setItem('bgColor', newColor);
+                // GASへ削除リクエスト
+                sendToGAS({
+                    action: "deleteMatch",
+                    matchKey: currentMatchKey,
+                    date: target.d,
+                    result: target.r
+                });
             }
         }
+    }
 
-        // Preset was confirmed by saving, clear pending state
-        if (_pendingPreset) {
-            updateSettingNameLabel(_pendingPreset._presetName || 'カスタム設定');
-            _pendingPreset = null;
-        } else {
-            // Only update to カスタム設定 if something actually changed
-            const changed =
-                sixCardProb !== prevSixCardProb ||
-                godPackProb !== prevGodPackProb ||
-                godPackMode !== prevGodPackMode ||
-                JSON.stringify(rarityTable4th) !== prevTable4th ||
-                JSON.stringify(rarityTable5th) !== prevTable5th ||
-                JSON.stringify(rarityTable6Pack4th) !== prevTable6_4 ||
-                JSON.stringify(rarityTable6Pack5th) !== prevTable6_5 ||
-                JSON.stringify(rarityTable6Pack6th) !== prevTable6_6 ||
-                JSON.stringify(rarityTableGodPack) !== prevTableGod;
-            if (changed) {
-                updateSettingNameLabel('カスタム設定');
-            }
+    // ----UI描画・更新処理 ----
+    function formatDisplayDate(dateData) {
+        // 旧フォーマット ("260309" のような文字列) の場合
+        if (typeof dateData === 'string' && dateData.length === 6) {
+            return `20${dateData.slice(0, 2)}/${dateData.slice(2, 4)}/${dateData.slice(4, 6)}`;
         }
-
-        saveActiveSettings(); // Save to localStorage for persistence
-        closeSettings();
-    }
-
-    // --- Count Settings Logic ---
-    const countSettingsScreen = document.getElementById('countSettingsScreen');
-    const countSettingsContainer = document.getElementById('countSettingsContainer');
-    const btnSaveCountSettings = document.getElementById('btnSaveCountSettings');
-    const btnCancelCountSettings = document.getElementById('btnCancelCountSettings');
-
-    function openCountSettings() {
-        renderCountInputs();
-        packContainer.classList.add('hidden');
-        controlsContainer.classList.add('hidden');
-        countSettingsScreen.classList.remove('hidden');
-    }
-
-    function closeCountSettings() {
-        countSettingsScreen.classList.add('hidden');
-        packContainer.classList.remove('hidden');
-        controlsContainer.classList.remove('hidden');
-    }
-
-    function renderCountInputs() {
-        countSettingsContainer.innerHTML = '';
-        Object.keys(rarityCounts).forEach(rarity => {
-            const row = document.createElement('div');
-            row.className = 'rarity-row row-count-setting'; // Added class for easier styling
-
-            // Rarity Label (Left)
-            const label = document.createElement('label');
-            label.textContent = rarity;
-            label.className = 'rarity-label';
-
-            // Count Input Group
-            const countGroup = document.createElement('div');
-            countGroup.className = 'count-group';
-
-            const inputCount = document.createElement('input');
-            inputCount.type = 'number';
-            inputCount.min = '1';
-            inputCount.value = rarityCounts[rarity];
-            inputCount.id = `count_${rarity}`;
-            inputCount.className = 'input-count';
-
-            const unit = document.createElement('span');
-            unit.textContent = '枚';
-
-            countGroup.appendChild(inputCount);
-            countGroup.appendChild(unit);
-
-            // Desired Input Group
-            const desiredGroup = document.createElement('div');
-            desiredGroup.className = 'desired-group';
-
-            const desiredLabel = document.createElement('span');
-            desiredLabel.textContent = 'ほしい';
-            // CSS handles styles now
-
-            const inputDesired = document.createElement('input');
-            inputDesired.type = 'text';
-            inputDesired.placeholder = '例: 1,5,10';
-            // Join array to string for display
-            inputDesired.value = (rarityDesired[rarity] || []).join(',');
-            inputDesired.id = `desired_${rarity}`;
-            inputDesired.className = 'input-desired';
-
-            desiredGroup.appendChild(desiredLabel);
-            desiredGroup.appendChild(inputDesired);
-
-            row.appendChild(label);
-            row.appendChild(countGroup);
-            row.appendChild(desiredGroup);
-            countSettingsContainer.appendChild(row);
-        });
-    }
-
-    function saveCountSettings() {
-        let valid = true;
-
-        // --- Snapshot before saving (counts only; desired does not affect label) ---
-        const prevCounts = JSON.stringify(rarityCounts);
-
-        // Update values
-        Object.keys(rarityCounts).forEach(rarity => {
-            // Save Counts
-            const inputCount = document.getElementById(`count_${rarity}`);
-            if (inputCount) {
-                const val = parseInt(inputCount.value);
-                if (!isNaN(val) && val > 0) {
-                    rarityCounts[rarity] = val;
-                } else {
-                    valid = false;
-                }
-            }
-
-            // Save Desired Numbers
-            const inputDesired = document.getElementById(`desired_${rarity}`);
-            if (inputDesired) {
-                const text = inputDesired.value.trim();
-                let nums = [];
-                if (text) {
-                    // Split by comma, trim, parse int, filter valids
-                    nums = text.split(',')
-                        .map(s => parseInt(s.trim()))
-                        .filter(n => !isNaN(n) && n > 0);
-                }
-                rarityDesired[rarity] = nums;
-            } else {
-                rarityDesired[rarity] = [];
-            }
-        });
-
-        if (!valid) {
-            alert('全ての枚数に1以上の数値を入力してください');
-            return;
+        // 新フォーマット (UNIXタイムスタンプ) の場合
+        if (typeof dateData === 'number') {
+            const d = new Date(dateData);
+            const yy = String(d.getFullYear());
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yy}/${mm}/${dd}`;
         }
-
-        saveActiveSettings(); // Save to localStorage for persistence
-
-        // Only mark as カスタム設定 if counts actually changed
-        if (JSON.stringify(rarityCounts) !== prevCounts) {
-            updateSettingNameLabel('カスタム設定');
-        }
-
-        closeCountSettings();
+        return dateData;
     }
 
-    // --- Preset Logic ---
-    const DEFAULT_PRESETS = {
-        "未知なる水域": {
-            "sixCardProb": 8,
-            "sixCardProbInput": 8,
-            "rarityTable4th": [
-                { "rarity": "👑", "rate": 0.04 },
-                { "rarity": "🌈🌈", "rate": 0.333 },
-                { "rarity": "🌈", "rate": 0.714 },
-                { "rarity": "☆☆☆", "rate": 0.222 },
-                { "rarity": "☆☆", "rate": 0.5 },
-                { "rarity": "☆", "rate": 2.572 },
-                { "rarity": "♢♢♢♢", "rate": 1.666 },
-                { "rarity": "♢♢♢", "rate": 4.952 },
-                { "rarity": "♢♢", "rate": 89.001 }
-            ],
-            "rarityTable5th": [
-                { "rarity": "👑", "rate": 0.16 },
-                { "rarity": "🌈🌈", "rate": 1.333 },
-                { "rarity": "🌈", "rate": 2.857 },
-                { "rarity": "☆☆☆", "rate": 0.888 },
-                { "rarity": "☆☆", "rate": 2 },
-                { "rarity": "☆", "rate": 10.288 },
-                { "rarity": "♢♢♢♢", "rate": 6.664 },
-                { "rarity": "♢♢♢", "rate": 19.81 },
-                { "rarity": "♢♢", "rate": 56 },
-            ],
-            "bgColor": "#8be7fe"
-        },
-        "紅蓮ブレイズ": {
-            "sixCardProb": 5.238,
-            "sixCardProbInput": 5.238,
-            "godPackProb": 100,
-            "godPackProbInput": 0.05,
-            "rarityTable4th": [
-                { "rarity": "👑", "rate": 0.04 },
-                { "rarity": "🌈🌈", "rate": 0.333 },
-                { "rarity": "🌈", "rate": 0.714 },
-                { "rarity": "☆☆☆", "rate": 0.222 },
-                { "rarity": "☆☆", "rate": 0.5 },
-                { "rarity": "☆", "rate": 2.572 },
-                { "rarity": "♢♢♢♢", "rate": 1.666 },
-                { "rarity": "♢♢♢", "rate": 4.952 },
-                { "rarity": "♢♢", "rate": 89.001 }
-            ],
-            "rarityTable5th": [
-                { "rarity": "👑", "rate": 0.16 },
-                { "rarity": "🌈🌈", "rate": 1.333 },
-                { "rarity": "🌈", "rate": 2.857 },
-                { "rarity": "☆☆☆", "rate": 0.888 },
-                { "rarity": "☆☆", "rate": 2 },
-                { "rarity": "☆", "rate": 10.288 },
-                { "rarity": "♢♢♢♢", "rate": 6.664 },
-                { "rarity": "♢♢♢", "rate": 19.81 },
-                { "rarity": "♢♢", "rate": 56 }
-            ],
-            "rarityTable6Pack4th": [
-                { "rarity": "👑", "rate": 0.04 },
-                { "rarity": "🌈🌈", "rate": 0.333 },
-                { "rarity": "🌈", "rate": 0.714 },
-                { "rarity": "☆☆☆", "rate": 0.222 },
-                { "rarity": "☆☆", "rate": 0.5 },
-                { "rarity": "☆", "rate": 2.572 },
-                { "rarity": "♢♢♢♢", "rate": 1.666 },
-                { "rarity": "♢♢♢", "rate": 4.952 },
-                { "rarity": "♢♢", "rate": 89.001 }
-            ],
-            "rarityTable6Pack5th": [
-                { "rarity": "👑", "rate": 0.16 },
-                { "rarity": "🌈🌈", "rate": 1.333 },
-                { "rarity": "🌈", "rate": 2.857 },
-                { "rarity": "☆☆☆", "rate": 0.888 },
-                { "rarity": "☆☆", "rate": 2 },
-                { "rarity": "☆", "rate": 10.288 },
-                { "rarity": "♢♢♢♢", "rate": 6.664 },
-                { "rarity": "♢♢♢", "rate": 19.81 },
-                { "rarity": "♢♢", "rate": 56 }
-            ],
-            "rarityTable6Pack6th": [
-                { "rarity": "🌈🌈", "rate": 31.82 },
-                { "rarity": "🌈", "rate": 68.18 },
-                { "rarity": "☆", "rate": 0 },
-                { "rarity": "♢♢♢", "rate": 0 }
-            ],
-            "rarityTableGodPack": [
-                { "rarity": "👑", "rate": 10 },
-                { "rarity": "🌈🌈", "rate": 0 },
-                { "rarity": "🌈", "rate": 0 },
-                { "rarity": "☆☆☆", "rate": 5 },
-                { "rarity": "☆☆", "rate": 55 },
-                { "rarity": "☆", "rate": 30 }
-            ],
-            "rarityCounts": { "👑": 2, "🌈🌈": 4, "🌈": 10, "☆☆☆": 1, "☆☆": 11, "☆": 6, "♢♢♢♢": 5, "♢♢♢": 8, "♢♢": 24, "♢": 32 },
-            "rarityDesired": { "👑": [], "🌈🌈": [], "🌈": [], "☆☆☆": [], "☆☆": [7], "☆": [], "♢♢♢♢": [], "♢♢♢": [], "♢♢": [], "♢": [] },
-            "bgColor": "#ff9e42"
-        },
-        "夢幻パレード": {
-            "sixCardProb": 5.238,
-            "sixCardProbInput": 5.238,
-            "godPackProb": 0.05,
-            "godPackProbInput": 0.05,
-            "rarityTable4th": [
-                { "rarity": "👑", "rate": 0.04 },
-                { "rarity": "🌈🌈", "rate": 0 },
-                { "rarity": "🌈", "rate": 0 },
-                { "rarity": "☆☆☆", "rate": 0.222 },
-                { "rarity": "☆☆", "rate": 0.5 },
-                { "rarity": "☆", "rate": 2.572 },
-                { "rarity": "♢♢♢♢", "rate": 1.667 },
-                { "rarity": "♢♢♢", "rate": 5 },
-                { "rarity": "♢♢", "rate": 89.999 }
-            ],
-            "rarityTable5th": [
-                { "rarity": "👑", "rate": 0.16 },
-                { "rarity": "🌈🌈", "rate": 0 },
-                { "rarity": "🌈", "rate": 0 },
-                { "rarity": "☆☆☆", "rate": 0.889 },
-                { "rarity": "☆☆", "rate": 2 },
-                { "rarity": "☆", "rate": 10.286 },
-                { "rarity": "♢♢♢♢", "rate": 6.667 },
-                { "rarity": "♢♢♢", "rate": 20 },
-                { "rarity": "♢♢", "rate": 59.998 }
-            ],
-            "rarityTable6Pack4th": [
-                { "rarity": "👑", "rate": 0.04 },
-                { "rarity": "🌈🌈", "rate": 0 },
-                { "rarity": "🌈", "rate": 0 },
-                { "rarity": "☆☆☆", "rate": 0.222 },
-                { "rarity": "☆☆", "rate": 0.5 },
-                { "rarity": "☆", "rate": 2.572 },
-                { "rarity": "♢♢♢♢", "rate": 1.667 },
-                { "rarity": "♢♢♢", "rate": 5 },
-                { "rarity": "♢♢", "rate": 89.999 }
-            ],
-            "rarityTable6Pack5th": [
-                { "rarity": "👑", "rate": 0.16 },
-                { "rarity": "🌈🌈", "rate": 0 },
-                { "rarity": "🌈", "rate": 0 },
-                { "rarity": "☆☆☆", "rate": 0.889 },
-                { "rarity": "☆☆", "rate": 2 },
-                { "rarity": "☆", "rate": 10.286 },
-                { "rarity": "♢♢♢♢", "rate": 6.667 },
-                { "rarity": "♢♢♢", "rate": 20 },
-                { "rarity": "♢♢", "rate": 59.998 }
-            ],
-            "rarityTable6Pack6th": [
-                { "rarity": "🌈🌈", "rate": 31.82 },
-                { "rarity": "🌈", "rate": 68.18 },
-                { "rarity": "☆", "rate": 0 },
-                { "rarity": "♢♢♢", "rate": 0 }
-            ],
-            "rarityTableGodPack": [
-                { "rarity": "👑", "rate": 3.921 },
-                { "rarity": "🌈🌈", "rate": 0 },
-                { "rarity": "🌈", "rate": 0 },
-                { "rarity": "☆☆☆", "rate": 3.921 },
-                { "rarity": "☆☆", "rate": 45.098 },
-                { "rarity": "☆", "rate": 47.058 }
-            ],
-            "rarityCounts": { "👑": 2, "🌈🌈": 8, "🌈": 20, "☆☆☆": 2, "☆☆": 23, "☆": 27, "♢♢♢♢": 10, "♢♢♢": 28, "♢♢": 51, "♢": 66 },
-            "rarityDesired": { "👑": [], "🌈🌈": [], "🌈": [], "☆☆☆": [1], "☆☆": [6], "☆": [], "♢♢♢♢": [6], "♢♢♢": [], "♢♢": [], "♢": [] },
-            "bgColor": "#ff9ef7"
-        },
-        "パルデアワンダー": {
-            "sixCardProb": 5.238,
-            "sixCardProbInput": 5.238,
-            "godPackProb": 0.05,
-            "godPackProbInput": 0.05,
-            "godPackMode": "no-rainbow",
-            "rarityTable4th": [
-                { "rarity": "👑", "rate": 0.04 },
-                { "rarity": "🌈🌈", "rate": 0 },
-                { "rarity": "🌈", "rate": 0 },
-                { "rarity": "☆☆☆", "rate": 0.222 },
-                { "rarity": "☆☆", "rate": 0.5 },
-                { "rarity": "☆", "rate": 2.572 },
-                { "rarity": "♢♢♢♢", "rate": 1.667 },
-                { "rarity": "♢♢♢", "rate": 5 },
-                { "rarity": "♢♢", "rate": 89.999 }
-            ],
-            "rarityTable5th": [
-                { "rarity": "👑", "rate": 0.16 },
-                { "rarity": "🌈🌈", "rate": 0 },
-                { "rarity": "🌈", "rate": 0 },
-                { "rarity": "☆☆☆", "rate": 0.889 },
-                { "rarity": "☆☆", "rate": 2 },
-                { "rarity": "☆", "rate": 10.286 },
-                { "rarity": "♢♢♢♢", "rate": 6.667 },
-                { "rarity": "♢♢♢", "rate": 20 },
-                { "rarity": "♢♢", "rate": 59.998 }
-            ],
-            "rarityTable6Pack4th": [
-                { "rarity": "👑", "rate": 0.04 },
-                { "rarity": "🌈🌈", "rate": 0 },
-                { "rarity": "🌈", "rate": 0 },
-                { "rarity": "☆☆☆", "rate": 0.222 },
-                { "rarity": "☆☆", "rate": 0.5 },
-                { "rarity": "☆", "rate": 2.572 },
-                { "rarity": "♢♢♢♢", "rate": 1.667 },
-                { "rarity": "♢♢♢", "rate": 5 },
-                { "rarity": "♢♢", "rate": 89.999 }
-            ],
-            "rarityTable6Pack5th": [
-                { "rarity": "👑", "rate": 0.16 },
-                { "rarity": "🌈🌈", "rate": 0 },
-                { "rarity": "🌈", "rate": 0 },
-                { "rarity": "☆☆☆", "rate": 0.889 },
-                { "rarity": "☆☆", "rate": 2 },
-                { "rarity": "☆", "rate": 10.286 },
-                { "rarity": "♢♢♢♢", "rate": 6.667 },
-                { "rarity": "♢♢♢", "rate": 20 },
-                { "rarity": "♢♢", "rate": 59.998 }
-            ],
-            "rarityTable6Pack6th": [
-                { "rarity": "🌈🌈", "rate": 31.82 },
-                { "rarity": "🌈", "rate": 68.18 },
-                { "rarity": "☆", "rate": 0 },
-                { "rarity": "♢♢♢", "rate": 0 }
-            ],
-            "rarityTableGodPack": [
-                { "rarity": "👑", "rate": 3.921 },
-                { "rarity": "🌈🌈", "rate": 0 },
-                { "rarity": "🌈", "rate": 0 },
-                { "rarity": "☆☆☆", "rate": 3.921 },
-                { "rarity": "☆☆", "rate": 45.098 },
-                { "rarity": "☆", "rate": 47.058 }
-            ],
-            "rarityCounts": { "👑": 2, "🌈🌈": 4, "🌈": 10, "☆☆☆": 1, "☆☆": 15, "☆": 6, "♢♢♢♢": 5, "♢♢♢": 12, "♢♢": 33, "♢": 43 },
-            "rarityDesired": { "👑": [], "🌈🌈": [2], "🌈": [3], "☆☆☆": [], "☆☆": [1, 7, 8], "☆": [], "♢♢♢♢": [], "♢♢♢": [], "♢♢": [], "♢": [] },
-            "bgColor": "#7cfee4"
-        }
-    };
+    function renderMatchStats() {
+        // GAS通信導入後は非同期でデータを取得済みのため globalMatchData を使用
+        const data = globalMatchData;
+        const history = data[currentMatchKey] || [];
 
-    function getPresets() {
-        const stored = localStorage.getItem('pokePackPresets');
-        const userPresets = stored ? JSON.parse(stored) : {};
-        // Merge defaults with user presets (user presets override defaults if name matches)
-        return { ...DEFAULT_PRESETS, ...userPresets };
-    }
-
-    function savePresetsToStorage(presets) {
-        localStorage.setItem('pokePackPresets', JSON.stringify(presets));
-    }
-
-    // --- Persistence Logic ---
-    function saveActiveSettings() {
-        const settings = getCurrentSettingsObj();
-        localStorage.setItem('pokePackActiveSettings', JSON.stringify(settings));
-    }
-
-    function loadActiveSettings() {
-        const stored = localStorage.getItem('pokePackActiveSettings');
-        if (stored) {
-            try {
-                const settings = JSON.parse(stored);
-                // Apply the settings using the same logic as applyPreset
-                if (settings.sixCardProb !== undefined) sixCardProb = settings.sixCardProb;
-                if (settings.godPackProb !== undefined) godPackProb = settings.godPackProb; // Load God Pack prob
-                if (settings.godPackMode !== undefined) godPackMode = settings.godPackMode; // Load God Pack mode
-
-                if (settings.rarityTable4th) rarityTable4th = settings.rarityTable4th;
-                if (settings.rarityTable5th) rarityTable5th = settings.rarityTable5th;
-                if (settings.rarityTable6Pack4th) rarityTable6Pack4th = settings.rarityTable6Pack4th;
-                if (settings.rarityTable6Pack5th) rarityTable6Pack5th = settings.rarityTable6Pack5th;
-                if (settings.rarityTable6Pack6th) rarityTable6Pack6th = settings.rarityTable6Pack6th;
-                if (settings.rarityTableGodPack) rarityTableGodPack = settings.rarityTableGodPack; // Load God Pack table
-
-                if (settings.rarityCounts) rarityCounts = settings.rarityCounts;
-                if (settings.rarityDesired) rarityDesired = settings.rarityDesired;
-
-                // Sync the main prob input if it exists
-                if (probInput) probInput.value = sixCardProb;
-                if (godProbInput) godProbInput.value = godPackProb;
-
-                // Restore bgColor
-                const savedBgColor = localStorage.getItem('bgColor');
-                if (savedBgColor && packBgTrapezoid) {
-                    packBgTrapezoid.style.backgroundColor = savedBgColor;
-                    if (bgColorInput) bgColorInput.value = savedBgColor;
-                }
-            } catch (e) {
-                console.error('Failed to load active settings', e);
-            }
-        }
-
-        // Restore setting name label from localStorage
-        if (settingNameLabel) {
-            settingNameLabel.textContent = currentSettingName;
-        }
-    }
-
-    function getCurrentSettingsObj() {
-        // Collect current input values
-        updateTableFromInputs(rarityTable4th, 'r4');
-        updateTableFromInputs(rarityTable5th, 'r5');
-        updateTableFromInputs(rarityTable6Pack4th, 'r6_4');
-        updateTableFromInputs(rarityTable6Pack5th, 'r6_5');
-        updateTableFromInputs(rarityTable6Pack6th, 'r6_6');
-        updateTableFromInputs(rarityTableGodPack, 'god');
-
-        return {
-            sixCardProb: sixCardProb,
-            sixCardProbInput: parseFloat(probInput.value),
-            godPackProb: godPackProb, // Save God Pack prob
-            godPackProbInput: parseFloat(godProbInput.value),
-            godPackMode: godPackMode, // Save God Pack mode
-            rarityTable4th: rarityTable4th,
-            rarityTable5th: rarityTable5th,
-            rarityTable6Pack4th: rarityTable6Pack4th,
-            rarityTable6Pack5th: rarityTable6Pack5th,
-            rarityTable6Pack6th: rarityTable6Pack6th,
-            rarityTableGodPack: rarityTableGodPack, // Save God Pack table
-            rarityCounts: rarityCounts, // Add counts to preset
-            rarityDesired: rarityDesired, // Add desired to preset
-            bgColor: bgColorInput ? bgColorInput.value : BG_COLOR_DEFAULT // Save background color
-        };
-    }
-
-    function applyPreset(preset, presetName) {
-        if (!preset) return;
-
-        // --- Preset load is "UI only" ---
-        // Temporarily overwrite the rarity table variables so openSettings
-        // can render the correct inputs. The actual global state and
-        // localStorage are only committed when the user clicks Save.
-        // We first snapshot the current state so closeSettings can restore it.
-        _pendingPreset = {
-            _presetName: presetName || 'カスタム設定',
-            sixCardProb: preset.sixCardProbInput,
-            godPackProb: preset.godPackProbInput !== undefined ? preset.godPackProbInput : (preset.godPackProb !== undefined ? preset.godPackProb : 0.05),
-            godPackMode: preset.godPackMode !== undefined ? preset.godPackMode : 'no-rainbow',
-            rarityTable4th: JSON.parse(JSON.stringify(preset.rarityTable4th)),
-            rarityTable5th: JSON.parse(JSON.stringify(preset.rarityTable5th)),
-            rarityTable6Pack4th: preset.rarityTable6Pack4th ? JSON.parse(JSON.stringify(preset.rarityTable6Pack4th)) : rarityTable6Pack4th,
-            rarityTable6Pack5th: preset.rarityTable6Pack5th ? JSON.parse(JSON.stringify(preset.rarityTable6Pack5th)) : rarityTable6Pack5th,
-            rarityTable6Pack6th: preset.rarityTable6Pack6th ? JSON.parse(JSON.stringify(preset.rarityTable6Pack6th)) : rarityTable6Pack6th,
-            rarityTableGodPack: preset.rarityTableGodPack ? JSON.parse(JSON.stringify(preset.rarityTableGodPack)) : rarityTableGodPack,
-            rarityCounts: preset.rarityCounts ? JSON.parse(JSON.stringify(preset.rarityCounts)) : rarityCounts,
-            rarityDesired: preset.rarityDesired ? JSON.parse(JSON.stringify(preset.rarityDesired)) : rarityDesired,
-            bgColor: preset.bgColor || BG_COLOR_DEFAULT
+        // 戦績計算 (r: 1=勝ち, 0=負け)
+        const calcWinRate = (games) => {
+            if (games.length === 0) return "--%";
+            const wins = games.filter(g => g.r === 1).length;
+            return Math.round((wins / games.length) * 100) + "%";
         };
 
-        // Temporarily apply to global vars so openSettings renders them
-        sixCardProb = _pendingPreset.sixCardProb;
-        godPackProb = _pendingPreset.godPackProb;
-        godPackMode = _pendingPreset.godPackMode;
-        rarityTable4th = _pendingPreset.rarityTable4th;
-        rarityTable5th = _pendingPreset.rarityTable5th;
-        rarityTable6Pack4th = _pendingPreset.rarityTable6Pack4th;
-        rarityTable6Pack5th = _pendingPreset.rarityTable6Pack5th;
-        rarityTable6Pack6th = _pendingPreset.rarityTable6Pack6th;
-        rarityTableGodPack = _pendingPreset.rarityTableGodPack;
-        rarityCounts = _pendingPreset.rarityCounts;
-        rarityDesired = _pendingPreset.rarityDesired;
+        const recent10 = history.slice(0, 10);
+        const recent50 = history.slice(0, 50);
 
-        // Update probInput / godProbInput before openSettings reads them
-        probInput.value = sixCardProb;
-        godProbInput.value = godPackProb;
+        rate10El.textContent = calcWinRate(recent10);
+        rate50El.textContent = calcWinRate(recent50);
 
-        // Show bgColor in picker (preview only, NOT saved to localStorage yet)
-        if (bgColorInput && packBgTrapezoid) {
-            bgColorInput.value = _pendingPreset.bgColor;
-            packBgTrapezoid.style.backgroundColor = _pendingPreset.bgColor;
-        }
+        historyCountEl.textContent = `(${history.length})`;
 
-        // Rebuild the settings UI with the preset values
-        // Pass a flag so openSettings skips its own state-restore logic
-        openSettings('preset');
-
-        // Close modal
-        presetModal.classList.add('hidden');
-        alert('プリセットを読み込みました。\nページ下部の「保存」ボタンで確定、「キャンセル」で元に戻ります。');
-    }
-
-    function renderPresets() {
-        const presets = getPresets();
-        presetList.innerHTML = '';
-
-        if (Object.keys(presets).length === 0) {
-            presetList.innerHTML = '<li style="padding:10px;text-align:center;color:#777;">プリセットがありません</li>';
-            return;
-        }
-
-        Object.keys(presets).forEach(name => {
+        // 履歴リストの描画
+        historyListEl.innerHTML = '';
+        history.slice(0, 50).forEach((item, index) => {
             const li = document.createElement('li');
-            li.className = 'preset-item';
+            li.className = 'history-item';
 
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'preset-name';
-            nameSpan.textContent = name;
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'history-date';
+            dateSpan.textContent = formatDisplayDate(item.d);
 
-            const btnGroup = document.createElement('div');
-            btnGroup.className = 'preset-item-buttons';
+            const rightDiv = document.createElement('div');
+            rightDiv.className = 'history-right';
 
-            // Load
-            const btnLoad = document.createElement('button');
-            btnLoad.className = 'preset-btn-sm btn-load';
-            btnLoad.textContent = '読込';
-            btnLoad.onclick = () => applyPreset(presets[name], name);
+            const resultSpan = document.createElement('span');
+            if (item.r === 1) {
+                resultSpan.className = 'history-result win';
+                resultSpan.textContent = 'WIN';
+            } else {
+                resultSpan.className = 'history-result loss';
+                resultSpan.textContent = 'LOSE';
+            }
 
-            // Overwrite
-            const btnOverwrite = document.createElement('button');
-            btnOverwrite.className = 'preset-btn-sm btn-overwrite';
-            btnOverwrite.textContent = '上書';
-            btnOverwrite.onclick = () => {
-                if (window.confirm(`プリセット「${name}」を現在の設定で上書きしますか？`)) {
-                    presets[name] = getCurrentSettingsObj();
-                    savePresetsToStorage(presets);
-                    alert('上書き保存しました');
-                }
-            };
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-history-btn';
+            deleteBtn.textContent = '消去';
+            deleteBtn.addEventListener('click', () => {
+                deleteMatchRecord(index);
+            });
 
-            // Delete
-            const btnDelete = document.createElement('button');
-            btnDelete.className = 'preset-btn-sm btn-delete';
-            btnDelete.textContent = '削除';
-            btnDelete.onclick = (e) => {
-                e.preventDefault(); // Prevent default button behavior
-                if (window.confirm(`プリセット「${name}」を削除しますか？`)) {
-                    delete presets[name];
-                    savePresetsToStorage(presets);
-                    renderPresets();
-                }
-            };
+            rightDiv.appendChild(resultSpan);
+            rightDiv.appendChild(deleteBtn);
 
-            // Color swatch
-            const colorSwatch = document.createElement('div');
-            colorSwatch.className = 'preset-color-swatch';
-            colorSwatch.style.backgroundColor = presets[name].bgColor || BG_COLOR_DEFAULT;
-
-            btnGroup.appendChild(colorSwatch);
-            btnGroup.appendChild(btnLoad);
-            btnGroup.appendChild(btnOverwrite);
-            btnGroup.appendChild(btnDelete);
-
-            li.appendChild(nameSpan);
-            li.appendChild(btnGroup);
-            presetList.appendChild(li);
+            li.appendChild(dateSpan);
+            li.appendChild(rightDiv);
+            historyListEl.appendChild(li);
         });
     }
 
-    // Event Listeners for Presets
-    btnPresets.addEventListener('click', () => {
-        // Ensure tables are synced with current inputs
-        updateTableFromInputs(rarityTable4th, 'r4');
-        updateTableFromInputs(rarityTable5th, 'r5');
-        updateTableFromInputs(rarityTable6Pack4th, 'r6_4');
-        updateTableFromInputs(rarityTable6Pack5th, 'r6_5');
-        updateTableFromInputs(rarityTable6Pack6th, 'r6_6');
+    function openMatchView(pId, oId) {
+        currentPhase = 'match';
+        currentMatchKey = `${pId}_${oId}`;
 
-        renderPresets();
-        presetModal.classList.remove('hidden');
-    });
+        // 画面切り替え
+        rosterView.classList.add('hidden');
+        matchView.classList.remove('hidden'); // 勝敗記録画面を表示
 
-    btnClosePresets.addEventListener('click', () => {
-        presetModal.classList.add('hidden');
-    });
+        // VSテキスト設定
+        const pName = characterList[pId];
+        const oName = characterList[oId];
+        vsText.innerHTML = `
+            <div class="vs-header-content">
+                <img src="images/${pName}.jpg" class="header-img" alt="${pName}" onerror="this.style.display='none'">
+                <span>${pName} VS ${oName}</span>
+                <img src="images/${oName}.jpg" class="header-img" alt="${oName}" onerror="this.style.display='none'">
+            </div>
+        `;
 
-    btnSaveNewPreset.addEventListener('click', () => {
-        const name = newPresetName.value.trim();
-        if (!name) {
-            alert('プリセット名を入力してください');
+        renderMatchStats();
+    }
+
+    function closeMatchView() {
+        currentPhase = 'opponent';
+        matchView.classList.add('hidden');
+        rosterView.classList.remove('hidden');
+
+        // 相手キャラの選択状態のみリセット
+        if (selectedOpponentBtn) selectedOpponentBtn.classList.remove('selected');
+        selectedOpponentBtn = null;
+        selectedOpponentId = null;
+
+        instructionText.textContent = '対戦相手のキャラを選択して下さい';
+
+        // 使用キャラは選択されたままなので、表示を維持
+        backBtn.classList.remove('hidden');
+        selectedPlayerDisplay.classList.remove('hidden');
+    }
+
+    // ---- ランキング処理 ----
+    function renderRanking() {
+        rankingListEl.innerHTML = '';
+        const data = globalMatchData;
+        const rankingData = [];
+
+        // キャラクターごとの総合勝率を計算
+        for (let i = 0; i < totalCharacters - 1; i++) { // 最後のボタンは除く
+            let totalGames = [];
+
+            // i番目のキャラがプレイヤーだった場合の全マッチアップの履歴を収集
+            for (const key in data) {
+                const [pId, oId] = key.split('_').map(Number);
+                if (pId === i) {
+                    // 各マッチアップの履歴はすでに配列の先頭が最新になっている
+                    // そのため、そのまま結合していく
+                    totalGames = totalGames.concat(data[key]);
+                }
+            }
+
+            if (totalGames.length > 0) {
+                // UNIXタイムスタンプ、または旧形式に合わせて時間単位で正確に降順ソート
+                totalGames.sort((a, b) => {
+                    const timeA = typeof a.d === 'number' ? a.d : new Date(`20${a.d.slice(0, 2)}-${a.d.slice(2, 4)}-${a.d.slice(4, 6)}`).getTime();
+                    const timeB = typeof b.d === 'number' ? b.d : new Date(`20${b.d.slice(0, 2)}-${b.d.slice(2, 4)}-${b.d.slice(4, 6)}`).getTime();
+                    return timeB - timeA;
+                });
+
+                // 10戦まはた50戦でスライス
+                const targetGames = totalGames.slice(0, currentRankingType);
+
+                if (targetGames.length > 0) {
+                    const wins = targetGames.filter(g => g.r === 1).length;
+                    const winRate = wins / targetGames.length;
+
+                    rankingData.push({
+                        id: i,
+                        name: characterList[i],
+                        rate: winRate,
+                        wins: wins,
+                        total: targetGames.length
+                    });
+                }
+            }
+        }
+
+        // 勝率で降順ソート、同率なら試合数が多い順
+        rankingData.sort((a, b) => {
+            if (b.rate !== a.rate) {
+                return b.rate - a.rate;
+            }
+            return b.total - a.total;
+        });
+
+        // 描画
+        if (rankingData.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.textContent = '対戦データがありません。';
+            li.style.justifyContent = 'center';
+            rankingListEl.appendChild(li);
+        } else {
+            rankingData.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'ranking-item';
+
+                const rankSpan = document.createElement('span');
+                rankSpan.className = 'ranking-rank';
+                rankSpan.textContent = `${index + 1}位`;
+
+                // --- 画像要素の追加 ---
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'ranking-img-wrapper';
+
+                const img = document.createElement('img');
+                img.src = `images/${item.name}.jpg`;
+                img.alt = item.name;
+                img.className = 'ranking-img';
+
+                // 画像読み込み成功時のみ要素を追加
+                img.addEventListener('load', () => {
+                    imgWrap.appendChild(img);
+                });
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'ranking-name';
+                nameSpan.textContent = item.name;
+
+                // 左側の要素をまとめるラッパー（ランク、画像、名前）
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'ranking-left-group';
+                leftDiv.appendChild(rankSpan);
+                leftDiv.appendChild(imgWrap);
+                leftDiv.appendChild(nameSpan);
+
+                const rateSpan = document.createElement('span');
+                rateSpan.className = 'ranking-rate';
+                rateSpan.textContent = `${Math.round(item.rate * 100)}%`;
+
+                const detailSpan = document.createElement('span');
+                detailSpan.style.fontSize = '12px';
+                detailSpan.style.color = '#718096';
+                detailSpan.style.marginLeft = '8px';
+                detailSpan.textContent = `(${item.wins}勝/${item.total}戦)`;
+
+                const rightDiv = document.createElement('div');
+                rightDiv.style.display = 'flex';
+                rightDiv.style.alignItems = 'baseline';
+                rightDiv.appendChild(rateSpan);
+                rightDiv.appendChild(detailSpan);
+
+                li.appendChild(leftDiv);
+                li.appendChild(rightDiv);
+
+                rankingListEl.appendChild(li);
+                autoShrinkText(nameSpan);
+            });
+        }
+    }
+
+    function openRankingView() {
+        currentPhase = 'ranking';
+        rosterView.classList.add('hidden');
+        rankingView.classList.remove('hidden');
+        renderRanking();
+    }
+
+    function closeRankingView() {
+        currentPhase = 'player';
+        rankingView.classList.add('hidden');
+        rosterView.classList.remove('hidden');
+        instructionText.textContent = '使用キャラクターを選択してください';
+    }
+
+    // ---- 詳細勝率画面の処理 ----
+    function renderDetailStats(targetCharId) {
+        detailRankingListEl.innerHTML = '';
+        const data = globalMatchData;
+        const opponentRankingData = [];
+        const charName = characterList[targetCharId];
+        detailCharName.innerHTML = `
+            <div class="vs-header-content">
+                <img src="images/${charName}.jpg" class="header-img" alt="${charName}" onerror="this.style.display='none'">
+                <span>${charName}の詳細勝率</span>
+            </div>
+        `;
+
+        // 過去の該当キャラの全試合を1つの配列に収集しつつ、相手ごとのデータも集計
+        let allGames = [];
+
+        for (let i = 0; i < totalCharacters - 1; i++) {
+            if (i === targetCharId) continue; // 同キャラ戦も集計する場合はコメントアウト
+
+            // targetCharId がプレイヤー側だった場合
+            const key1 = `${targetCharId}_${i}`;
+            let oppGames = [];
+            if (data[key1]) {
+                oppGames = oppGames.concat(data[key1]);
+            }
+            // ※もし targetCharId が相手側だった場合も集計するなら、ここのロジックを変更する
+            // 現在は仕様として「自身がプレイヤー側の勝率のみ」をベースに集計していると仮定
+
+            if (oppGames.length > 0) {
+                // 相手ごとの戦績（最新順ソート）
+                oppGames.sort((a, b) => {
+                    const timeA = typeof a.d === 'number' ? a.d : new Date(`20${a.d.slice(0, 2)}-${a.d.slice(2, 4)}-${a.d.slice(4, 6)}`).getTime();
+                    const timeB = typeof b.d === 'number' ? b.d : new Date(`20${b.d.slice(0, 2)}-${b.d.slice(2, 4)}-${b.d.slice(4, 6)}`).getTime();
+                    return timeB - timeA;
+                });
+
+                // 相手ごとには直近50戦までで勝率計算（ランキング用）
+                const recentOppGames = oppGames.slice(0, 50);
+                const wins = recentOppGames.filter(g => g.r === 1).length;
+
+                opponentRankingData.push({
+                    opponentId: i,
+                    opponentName: characterList[i],
+                    rate: wins / recentOppGames.length,
+                    wins: wins,
+                    total: recentOppGames.length
+                });
+
+                // allGames に追加する際、対戦相手のIDも付与しておく（内訳表示用）
+                const oppGamesWithId = oppGames.map(game => ({
+                    ...game,
+                    opponentId: i
+                }));
+                allGames = allGames.concat(oppGamesWithId);
+            }
+        }
+
+        // --- 総合勝率処理 ---
+        // 全試合を最新順にソート
+        allGames.sort((a, b) => {
+            const timeA = typeof a.d === 'number' ? a.d : new Date(`20${a.d.slice(0, 2)} -${a.d.slice(2, 4)} -${a.d.slice(4, 6)} `).getTime();
+            const timeB = typeof b.d === 'number' ? b.d : new Date(`20${b.d.slice(0, 2)} -${b.d.slice(2, 4)} -${b.d.slice(4, 6)} `).getTime();
+            return timeB - timeA;
+        });
+
+        // 10戦総合勝率
+        const recent10 = allGames.slice(0, 10);
+        if (recent10.length > 0) {
+            const wins10 = recent10.filter(g => g.r === 1).length;
+            detailRate10.textContent = `${Math.round((wins10 / recent10.length) * 100)}% `;
+            breakdown10Btn.classList.remove('hidden');
+        } else {
+            detailRate10.textContent = '--%';
+            breakdown10Btn.classList.add('hidden');
+        }
+
+        // 10戦内訳ボタンイベント
+        breakdown10Btn.onclick = () => toggleBreakdown('10', recent10, "直近10戦 内訳");
+
+        // 50戦総合勝率
+        const recent50 = allGames.slice(0, 50);
+        if (recent50.length > 0) {
+            const wins50 = recent50.filter(g => g.r === 1).length;
+            detailRate50.textContent = `${Math.round((wins50 / recent50.length) * 100)}% `;
+            breakdown50Btn.classList.remove('hidden');
+        } else {
+            detailRate50.textContent = '--%';
+            breakdown50Btn.classList.add('hidden');
+        }
+
+        // 50戦内訳ボタンイベント
+        breakdown50Btn.onclick = () => toggleBreakdown('50', recent50, "直近50戦 内訳");
+
+        // --- 相手ランキング処理 ---
+        // 勝率で降順ソート
+        opponentRankingData.sort((a, b) => {
+            if (b.rate !== a.rate) {
+                return b.rate - a.rate;
+            }
+            return b.total - a.total; // 同率なら試合数が多い相手が上
+        });
+
+        if (opponentRankingData.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.textContent = '対戦データがありません。';
+            li.style.justifyContent = 'center';
+            detailRankingListEl.appendChild(li);
+        } else {
+            opponentRankingData.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'ranking-item';
+
+                const rankSpan = document.createElement('span');
+                rankSpan.className = 'ranking-rank';
+                rankSpan.textContent = `${index + 1}位`;
+
+                // --- 画像要素の追加 ---
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'ranking-img-wrapper';
+
+                const img = document.createElement('img');
+                img.src = `images/${item.opponentName}.jpg`;
+                img.alt = item.opponentName;
+                img.className = 'ranking-img';
+
+                img.addEventListener('load', () => {
+                    imgWrap.appendChild(img);
+                });
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'ranking-name';
+                nameSpan.textContent = `${item.opponentName}`;
+
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'ranking-left-group';
+                leftDiv.appendChild(rankSpan);
+                leftDiv.appendChild(imgWrap);
+                leftDiv.appendChild(nameSpan);
+
+                const rateSpan = document.createElement('span');
+                rateSpan.className = 'ranking-rate';
+                rateSpan.textContent = `${Math.round(item.rate * 100)}%`;
+
+                const detailSpan = document.createElement('span');
+                detailSpan.style.fontSize = '12px';
+                detailSpan.style.color = '#718096';
+                detailSpan.style.marginLeft = '8px';
+                detailSpan.textContent = `(${item.wins}勝/${item.total}戦)`;
+
+                const rightDiv = document.createElement('div');
+                rightDiv.style.display = 'flex';
+                rightDiv.style.alignItems = 'baseline';
+                rightDiv.appendChild(rateSpan);
+                rightDiv.appendChild(detailSpan);
+
+                li.appendChild(leftDiv);
+                li.appendChild(rightDiv);
+
+                detailRankingListEl.appendChild(li);
+                autoShrinkText(nameSpan);
+            });
+        }
+    }
+
+    function openDetailView() {
+        currentPhase = 'detail';
+        rosterView.classList.add('hidden');
+        detailView.classList.remove('hidden');
+        // 詳細画面を開くときは内訳表示をリセット
+        activeBreakdownType = null;
+        breakdownInlineContainer.classList.add('hidden');
+        renderDetailStats(selectedPlayerId);
+    }
+
+    function closeDetailView() {
+        currentPhase = 'opponent'; // 詳細画面からは対戦相手選択画面に戻る
+        detailView.classList.add('hidden');
+        rosterView.classList.remove('hidden');
+    }
+
+    // ---- 内訳インライン処理 ----
+    function toggleBreakdown(type, games, title) {
+        // 同じボタンが押された場合は閉じる（トグル）
+        if (activeBreakdownType === type) {
+            breakdownInlineContainer.classList.add('hidden');
+            activeBreakdownType = null;
             return;
         }
 
-        const presets = getPresets();
-        if (presets[name]) {
-            if (!confirm(`同名のプリセット「${name}」が既に存在します。上書きしますか？`)) {
+        // 違うボタンが押された（または初回）の場合は表示内容を更新して開く
+        activeBreakdownType = type;
+        breakdownTitle.textContent = title;
+        breakdownList.innerHTML = '';
+
+        if (games.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.textContent = 'データがありません。';
+            li.style.justifyContent = 'center';
+            breakdownList.appendChild(li);
+        } else {
+            games.forEach((item) => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+
+                // 日付
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'history-date';
+                dateSpan.textContent = formatDisplayDate(item.d);
+
+                // 対戦相手
+                const oppName = characterList[item.opponentId];
+
+                // 画像要素の追加
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'ranking-img-wrapper breakdown-list-img';
+
+                const img = document.createElement('img');
+                img.src = `images/${oppName}.jpg`;
+                img.alt = oppName;
+                img.className = 'ranking-img';
+
+                img.addEventListener('load', () => {
+                    imgWrap.appendChild(img);
+                });
+
+                const oppSpan = document.createElement('span');
+                oppSpan.className = 'ranking-name breakdown-list-name';
+                oppSpan.style.flexGrow = '1';
+                oppSpan.textContent = `vs ${oppName}`;
+
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'ranking-left-group';
+                leftDiv.appendChild(dateSpan);
+                leftDiv.appendChild(imgWrap);
+                leftDiv.appendChild(oppSpan);
+
+                // 勝敗
+                const rightDiv = document.createElement('div');
+                rightDiv.className = 'history-right';
+                const resultSpan = document.createElement('span');
+                if (item.r === 1) {
+                    resultSpan.className = 'history-result win';
+                    resultSpan.textContent = 'WIN';
+                } else {
+                    resultSpan.className = 'history-result loss';
+                    resultSpan.textContent = 'LOSE';
+                }
+                rightDiv.appendChild(resultSpan);
+
+                li.appendChild(leftDiv);
+                li.appendChild(rightDiv);
+                breakdownList.appendChild(li);
+                autoShrinkText(oppSpan);
+            });
+        }
+
+        breakdownInlineContainer.classList.remove('hidden');
+    }
+
+    // ---- イベントリスナー設定 ----
+
+    // 勝敗記録画面の戻るボタン
+    backToRosterBtn.addEventListener('click', closeMatchView);
+
+    // キャラ選択画面の戻るボタン（対戦相手選択中から使用キャラ選択へ）
+    backBtn.addEventListener('click', () => {
+        if (currentPhase === 'opponent') {
+            if (selectedOpponentBtn) {
+                selectedOpponentBtn.classList.remove('selected');
+                selectedOpponentBtn = null;
+                selectedOpponentId = null;
+            }
+            if (selectedPlayerBtn) {
+                selectedPlayerBtn.classList.add('selected');
+            }
+            // 右下ボタンのテキストを「全キャラ勝率」に戻す
+            const actionBtn = rosterContainer.lastElementChild;
+            if (actionBtn && actionBtn.classList.contains('settings-btn')) {
+                actionBtn.textContent = '全キャラ勝率';
+            }
+            instructionText.textContent = '使用キャラクターを選択してください';
+            currentPhase = 'player';
+            backBtn.classList.add('hidden');
+            selectedPlayerDisplay.classList.add('hidden');
+        }
+    });
+
+    // ランキング画面の戻るボタン
+    backFromRankingBtn.addEventListener('click', closeRankingView);
+
+    // 詳細勝率画面の戻るボタン
+    backFromDetailBtn.addEventListener('click', closeDetailView);
+
+    // ランキングのタブ切り替え
+    tab10Btn.addEventListener('click', () => {
+        if (currentRankingType !== 10) {
+            currentRankingType = 10;
+            tab10Btn.className = 'result-btn win-btn active-tab';
+            tab50Btn.className = 'result-btn loss-btn inactive-tab';
+            renderRanking();
+        }
+    });
+
+    tab50Btn.addEventListener('click', () => {
+        if (currentRankingType !== 50) {
+            currentRankingType = 50;
+            tab50Btn.className = 'result-btn win-btn active-tab';
+            tab10Btn.className = 'result-btn loss-btn inactive-tab';
+            renderRanking();
+        }
+    });
+
+    // 履歴全削除ボタンイベント
+    clearAllHistoryBtn.addEventListener('click', () => {
+        const history = globalMatchData[currentMatchKey] || [];
+
+        if (history.length === 0) {
+            alert("削除する履歴がありません。");
+            return;
+        }
+
+        if (confirm(`このマッチアップの対戦履歴（全${history.length} 件）を本当にすべて消去しますか？\nこの操作は元に戻せません。`)) {
+            // 画面上から消去
+            globalMatchData[currentMatchKey] = [];
+            renderMatchStats();
+
+            // GASへ全削除リクエスト
+            sendToGAS({
+                action: "clearAll",
+                matchKey: currentMatchKey
+            });
+        }
+    });
+
+    // 勝敗ボタンイベント
+    winBtn.addEventListener('click', () => addMatchResult(1)); // 1: 勝ち
+    lossBtn.addEventListener('click', () => addMatchResult(0)); // 0: 負け
+
+    // ---- キャラクターボタンの生成 ----
+    for (let i = 0; i < totalCharacters; i++) {
+        const btn = document.createElement('button');
+        let charName = characterList[i];
+
+        btn.className = 'char-btn';
+        if (charName === "詳細勝率 / 全キャラ勝率") {
+            btn.classList.add('settings-btn'); // 既存の設定ボタンスタイルを流用
+            btn.style.borderStyle = 'solid'; // 点線から実線に変更
+            btn.style.borderColor = '#cbd5e0';
+            btn.style.backgroundColor = '#e2e8f0';
+            btn.style.cursor = 'pointer';
+            btn.style.color = '#2d3748';
+            btn.style.fontWeight = 'bold';
+
+            // 初期状態では「全キャラ勝率」のラベルにする
+            btn.textContent = "全キャラ勝率";
+        } else {
+            // 画像ファイルのパスを組み立てる
+            const imgPath = `images/${charName}.jpg`;
+
+            // 画像要素を作成して読み込みを試みる
+            const img = document.createElement('img');
+            img.src = imgPath;
+            img.alt = charName;
+            img.className = 'char-img';
+
+            // 画像の読み込みに成功した場合のみ表示する
+            img.addEventListener('load', () => {
+                btn.classList.add('has-image');
+                btn.insertBefore(img, btn.firstChild);
+
+                // ラベルが1行に収まるようフォントサイズを自動調整
+                requestAnimationFrame(() => {
+                    let fontSize = 10;
+                    label.style.fontSize = fontSize + 'px';
+                    while (label.scrollWidth > label.offsetWidth && fontSize > 6) {
+                        fontSize -= 0.1;
+                        label.style.fontSize = fontSize + 'px';
+                    }
+                });
+            });
+
+            // ラベルテキスト
+            const label = document.createElement('span');
+            label.className = 'char-label';
+            label.textContent = charName;
+            btn.appendChild(label);
+        }
+
+        btn.dataset.id = i; // インデックスをデータ属性に保持
+
+        // 元の名前が長いので aria-label は元の名前、または現在のテキストをセット
+        btn.setAttribute('aria-label', charName);
+
+        btn.addEventListener('click', () => {
+            if (charName === "詳細勝率 / 全キャラ勝率") {
+                if (currentPhase === 'player') {
+                    // プレイヤー選択中に押された場合は全キャラ勝率画面へ
+                    loadingOverlay.classList.remove('hidden');
+                    loadHistoryData().then(() => {
+                        loadingOverlay.classList.add('hidden');
+                        openRankingView();
+                    });
+                } else if (currentPhase === 'opponent') {
+                    // 対戦相手選択中に押された場合は「詳細勝率」へ
+                    loadingOverlay.classList.remove('hidden');
+                    loadHistoryData().then(() => {
+                        loadingOverlay.classList.add('hidden');
+                        openDetailView();
+                    });
+                }
                 return;
             }
-        }
 
-        presets[name] = getCurrentSettingsObj();
-        savePresetsToStorage(presets);
-        newPresetName.value = '';
-        renderPresets();
-    });
+            const charId = parseInt(btn.dataset.id, 10);
 
-    // Event Listeners
-    btnOpen1.addEventListener('click', () => openPack(1));
-    btnOpen10.addEventListener('click', () => openPack(10));
-    btnReopen.addEventListener('click', reopenPack);
-    btnBackToHome.addEventListener('click', resetToHome);
+            if (currentPhase === 'player') {
+                if (selectedPlayerBtn) {
+                    selectedPlayerBtn.classList.remove('selected');
+                }
+                btn.classList.add('selected');
+                selectedPlayerBtn = btn;
+                selectedPlayerId = charId;
 
-    btnProb.addEventListener('click', openSettings);
-    btnSaveSettings.addEventListener('click', saveSettings);
-    btnCancelSettings.addEventListener('click', closeSettings);
+                // 相手選択画面になる前に裏で最新データを取得しておく（表示ラグ軽減）
+                loadHistoryData();
 
-    // Count Settings Events
-    document.getElementById('btnCount').addEventListener('click', openCountSettings);
-    btnSaveCountSettings.addEventListener('click', saveCountSettings);
-    btnCancelCountSettings.addEventListener('click', closeCountSettings);
+                // 右下のボタンのテキストを「詳細勝率」に変更する
+                const actionBtn = rosterContainer.lastElementChild;
+                if (actionBtn && actionBtn.classList.contains('settings-btn')) {
+                    actionBtn.textContent = '詳細勝率';
+                }
 
-    // Auto-cap input at 100, and auto-fill 0 if empty
-    probInput.addEventListener('input', () => {
-        if (probInput.value === '') {
-            probInput.value = 0;
-        } else if (parseFloat(probInput.value) > 100) {
-            probInput.value = 100;
-        }
-    });
+                setTimeout(() => {
+                    btn.classList.remove('selected');
+                    instructionText.textContent = '対戦相手のキャラを選択して下さい';
+                    currentPhase = 'opponent';
+                    backBtn.classList.remove('hidden'); // 戻るボタンを表示
 
-    godProbInput.addEventListener('input', () => {
-        if (godProbInput.value === '') {
-            godProbInput.value = 0;
-        } else if (parseFloat(godProbInput.value) > 100) {
-            godProbInput.value = 100;
-        }
-    });
+                    // 選択したキャラを表示
+                    playerNameText.textContent = characterList[charId];
+                    selectedPlayerDisplay.classList.remove('hidden');
+                }, 400);
 
-    // Allow Enter key to save
-    probInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            saveSettings();
-        }
-    });
+            } else if (currentPhase === 'opponent') {
+                if (selectedOpponentBtn) {
+                    selectedOpponentBtn.classList.remove('selected');
+                }
+                btn.classList.add('selected');
+                selectedOpponentBtn = btn;
+                selectedOpponentId = charId;
 
-    // Load active settings on startup
-    loadActiveSettings();
-
-    // Usage Modal Logic
-    if (btnUsage) {
-        btnUsage.addEventListener('click', () => {
-            usageModal.classList.remove('hidden');
+                // 画面遷移
+                setTimeout(() => {
+                    openMatchView(selectedPlayerId, selectedOpponentId);
+                }, 400);
+            }
         });
+
+        rosterContainer.appendChild(btn);
     }
 
-    if (btnCloseUsage) {
-        btnCloseUsage.addEventListener('click', () => {
-            usageModal.classList.add('hidden');
-        });
-    }
-
-    // Close modal when clicking outside content
-    window.addEventListener('click', (e) => {
-        if (e.target === usageModal) {
-            usageModal.classList.add('hidden');
-        }
-    });
-
-    // Tab Switching Logic
-    usageTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            // Remove active class from all tabs
-            usageTabs.forEach(t => t.classList.remove('active'));
-            // Add active class to clicked tab
-            tab.classList.add('active');
-
-            // Hide all contents
-            usageContents.forEach(content => content.classList.remove('active'));
-            // Show target content
-            const targetId = tab.getAttribute('data-tab');
-            document.getElementById(targetId).classList.add('active');
-        });
-    });
+    // 初回ロード時にデータを取得しておく
+    loadHistoryData();
 });
