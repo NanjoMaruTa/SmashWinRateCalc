@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMatchKey = '';
     let currentRankingType = 10; // 10 or 50
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzCuMj4AuzxZPs2fy8OW3Vs9A3m_OhKGcKyyoolv3ky12xITEHBg0VG-KoI83iVYh1z2w/exec';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwXjfE25KuGvsV3YZC2MJiPD2v46x-Nqmh-v9ohEtq0U2rbkFX5JYtGpvLohaQNkWetQg/exec';
     let globalMatchData = {}; // 取得したデータを一時保存する変数
 
     // ---- GASとの通信処理 ----
@@ -146,10 +146,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function deleteMatchRecord(index) {
+    function deleteMatchRecord(targetDate) {
         if (confirm("この対戦記録を消去しますか？")) {
             const history = globalMatchData[currentMatchKey];
-            if (history && history.length > index) {
+            // 日付で一意に特定して削除対象を探す
+            const index = history ? history.findIndex(g => g.d === targetDate) : -1;
+            if (index !== -1) {
                 const target = history[index];
 
                 // 画面上から先に消去
@@ -196,17 +198,24 @@ document.addEventListener('DOMContentLoaded', () => {
             return Math.round((wins / games.length) * 100) + "%";
         };
 
-        const recent10 = history.slice(0, 10);
-        const recent50 = history.slice(0, 50);
+        // タイムスタンプで降順ソート（新しい順）してからスライス
+        const sorted = [...history].sort((a, b) => {
+            const tA = typeof a.d === 'number' ? a.d : new Date(`20${a.d.slice(0, 2)}-${a.d.slice(2, 4)}-${a.d.slice(4, 6)}`).getTime();
+            const tB = typeof b.d === 'number' ? b.d : new Date(`20${b.d.slice(0, 2)}-${b.d.slice(2, 4)}-${b.d.slice(4, 6)}`).getTime();
+            return tB - tA;
+        });
+
+        const recent10 = sorted.slice(0, 10);
+        const recent50 = sorted.slice(0, 50);
 
         rate10El.textContent = calcWinRate(recent10);
         rate50El.textContent = calcWinRate(recent50);
 
         historyCountEl.textContent = `(${history.length})`;
 
-        // 履歴リストの描画
+        // 履歴リストの描画（新しい順に表示）
         historyListEl.innerHTML = '';
-        history.slice(0, 50).forEach((item, index) => {
+        sorted.slice(0, 50).forEach((item, index) => {
             const li = document.createElement('li');
             li.className = 'history-item';
 
@@ -230,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteBtn.className = 'delete-history-btn';
             deleteBtn.textContent = '消去';
             deleteBtn.addEventListener('click', () => {
-                deleteMatchRecord(index);
+                deleteMatchRecord(item.d); // 日付で一意に特定して削除
             });
 
             rightDiv.appendChild(resultSpan);
@@ -881,5 +890,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // 初回ロード時にデータを取得しておく
     loadHistoryData();
 });
-
-
