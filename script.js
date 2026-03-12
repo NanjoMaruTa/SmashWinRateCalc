@@ -83,6 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPhase = 'player'; // 'player' or 'opponent' or 'match' or 'ranking' or 'detail'
     let currentMatchKey = '';
     let currentRankingType = 10; // 10 or 50
+    let cameFromRanking = false; // ランキングから詳細画面へ遷移したかどうかのフラグ
+    let cameFromDetailToMatch = false; // 詳細画面から個別の勝負記録画面へ遷移したかどうかのフラグ
 
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbwXjfE25KuGvsV3YZC2MJiPD2v46x-Nqmh-v9ohEtq0U2rbkFX5JYtGpvLohaQNkWetQg/exec';
     let globalMatchData = {}; // 取得したデータを一時保存する変数
@@ -259,35 +261,64 @@ document.addEventListener('DOMContentLoaded', () => {
         rosterView.classList.add('hidden');
         matchView.classList.remove('hidden'); // 勝敗記録画面を表示
 
-        // VSテキスト設定
+        // VSテキスト設定（使用キャラ部分をクリックで詳細勝率画面へ遷移）
         const pName = characterList[pId];
         const oName = characterList[oId];
         vsText.innerHTML = `
             <div class="vs-header-content">
-                <img src="images/${pName}.jpg" class="header-img" alt="${pName}" onerror="this.style.display='none'">
-                <span>${pName} VS ${oName}</span>
+                <div id="match-player-link" style="display:flex;align-items:center;gap:4px;cursor:pointer;opacity:1;transition:opacity 0.15s;">
+                    <img src="images/${pName}.jpg" class="header-img" alt="${pName}" onerror="this.style.display='none'">
+                    <span>${pName}</span>
+                </div>
+                <span> VS ${oName}</span>
                 <img src="images/${oName}.jpg" class="header-img" alt="${oName}" onerror="this.style.display='none'">
             </div>
         `;
+
+        // 使用キャラ名クリックで詳細勝率画面へ遷移
+        const playerLink = document.getElementById('match-player-link');
+        if (playerLink) {
+            playerLink.addEventListener('mouseenter', () => { playerLink.style.opacity = '0.7'; });
+            playerLink.addEventListener('mouseleave', () => { playerLink.style.opacity = '1'; });
+            playerLink.addEventListener('click', () => {
+                cameFromDetailToMatch = true; // 戻るときにmatch画面に戻るためフラグを立てる
+                matchView.classList.add('hidden');
+                detailView.classList.remove('hidden');
+                activeBreakdownType = null;
+                breakdownInlineContainer.classList.add('hidden');
+                renderDetailStats(pId); // クリックしたキャラ（使用キャラ）の詳細へ
+            });
+        }
 
         renderMatchStats();
     }
 
     function closeMatchView() {
-        currentPhase = 'opponent';
         matchView.classList.add('hidden');
-        rosterView.classList.remove('hidden');
 
-        // 相手キャラの選択状態のみリセット
-        if (selectedOpponentBtn) selectedOpponentBtn.classList.remove('selected');
-        selectedOpponentBtn = null;
-        selectedOpponentId = null;
+        if (cameFromDetailToMatch) {
+            // 詳細勝率画面から来た場合は詳細勝率画面に戻る
+            cameFromDetailToMatch = false;
+            currentPhase = 'detail';
+            detailView.classList.remove('hidden');
+            // 詳細画面に戻ったときにデータが更新されている可能性があるので再描画
+            renderDetailStats(selectedPlayerId);
+        } else {
+            // 通常時（キャラ選択画面から来た場合）
+            currentPhase = 'opponent';
+            rosterView.classList.remove('hidden');
 
-        instructionText.textContent = '対戦相手のキャラを選択して下さい';
+            // 相手キャラの選択状態のみリセット
+            if (selectedOpponentBtn) selectedOpponentBtn.classList.remove('selected');
+            selectedOpponentBtn = null;
+            selectedOpponentId = null;
 
-        // 使用キャラは選択されたままなので、表示を維持
-        backBtn.classList.remove('hidden');
-        selectedPlayerDisplay.classList.remove('hidden');
+            instructionText.textContent = '対戦相手のキャラを選択して下さい';
+
+            // 使用キャラは選択されたままなので、表示を維持
+            backBtn.classList.remove('hidden');
+            selectedPlayerDisplay.classList.remove('hidden');
+        }
     }
 
     // ---- ランキング処理 ----
@@ -378,12 +409,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 nameSpan.className = 'ranking-name';
                 nameSpan.textContent = item.name;
 
-                // 左側の要素をまとめるラッパー（ランク、画像、名前）
                 const leftDiv = document.createElement('div');
                 leftDiv.className = 'ranking-left-group';
                 leftDiv.appendChild(rankSpan);
                 leftDiv.appendChild(imgWrap);
                 leftDiv.appendChild(nameSpan);
+
+                // キャラ名（左側グループ）クリックで詳細勝率画面へ遷移
+                leftDiv.style.cursor = 'pointer';
+                leftDiv.addEventListener('click', () => {
+                    cameFromRanking = true;
+                    selectedPlayerId = item.id; // クリックしたキャラを選択状態にする
+                    currentPhase = 'detail';
+                    rankingView.classList.add('hidden');
+                    detailView.classList.remove('hidden');
+                    activeBreakdownType = null;
+                    breakdownInlineContainer.classList.add('hidden');
+                    renderDetailStats(selectedPlayerId);
+                });
+                
+                // ホバー時の視覚的フィードバック
+                leftDiv.addEventListener('mouseenter', () => {
+                    leftDiv.style.opacity = '0.7';
+                });
+                leftDiv.addEventListener('mouseleave', () => {
+                    leftDiv.style.opacity = '1';
+                });
 
                 const rateSpan = document.createElement('span');
                 rateSpan.className = 'ranking-rate';
@@ -564,6 +615,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 leftDiv.appendChild(imgWrap);
                 leftDiv.appendChild(nameSpan);
 
+                // キャラ名（左側グループ）クリックで勝敗記録画面へ遷移
+                leftDiv.style.cursor = 'pointer';
+                leftDiv.addEventListener('click', () => {
+                    cameFromDetailToMatch = true;
+                    detailView.classList.add('hidden'); // 詳細画面を隠す
+                    openMatchView(selectedPlayerId, item.opponentId); // selectedPlayerId(自分) vs opponentId(相手) で開く
+                });
+                
+                // ホバー時の視覚的フィードバック
+                leftDiv.addEventListener('mouseenter', () => {
+                    leftDiv.style.opacity = '0.7';
+                });
+                leftDiv.addEventListener('mouseleave', () => {
+                    leftDiv.style.opacity = '1';
+                });
+
                 const rateSpan = document.createElement('span');
                 rateSpan.className = 'ranking-rate';
                 rateSpan.textContent = `${Math.round(item.rate * 100)}%`;
@@ -600,9 +667,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function closeDetailView() {
-        currentPhase = 'opponent'; // 詳細画面からは対戦相手選択画面に戻る
         detailView.classList.add('hidden');
-        rosterView.classList.remove('hidden');
+        if (cameFromDetailToMatch) {
+            // 勝敗記録画面から来た場合は勝敗記録画面に戻る
+            cameFromDetailToMatch = false;
+            currentPhase = 'match';
+            matchView.classList.remove('hidden');
+        } else if (cameFromRanking) {
+            // ランキング画面から来た場合はランキング画面に戻る
+            cameFromRanking = false;
+            currentPhase = 'ranking';
+            rankingView.classList.remove('hidden');
+        } else {
+            // それ以外（キャラ選択から来た場合）は対戦相手選択に戻る
+            currentPhase = 'opponent'; 
+            rosterView.classList.remove('hidden');
+        }
     }
 
     // ---- 内訳インライン処理 ----
@@ -661,6 +741,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 leftDiv.appendChild(dateSpan);
                 leftDiv.appendChild(imgWrap);
                 leftDiv.appendChild(oppSpan);
+
+                // キャラ名（左側グループ）クリックで勝敗記録画面へ遷移
+                leftDiv.style.cursor = 'pointer';
+                leftDiv.addEventListener('click', () => {
+                    cameFromDetailToMatch = true;
+                    detailView.classList.add('hidden'); // 詳細画面を隠す
+                    openMatchView(selectedPlayerId, item.opponentId); // selectedPlayerId(自分) vs opponentId(相手) で開く
+                });
+
+                // ホバー時の視覚的フィードバック
+                leftDiv.addEventListener('mouseenter', () => {
+                    leftDiv.style.opacity = '0.7';
+                });
+                leftDiv.addEventListener('mouseleave', () => {
+                    leftDiv.style.opacity = '1';
+                });
 
                 // 勝敗
                 const rightDiv = document.createElement('div');
