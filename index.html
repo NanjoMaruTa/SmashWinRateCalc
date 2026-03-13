@@ -40,18 +40,43 @@
                 <button id="loss-btn" class="result-btn loss-btn">負け</button>
             </div>
 
+            <div class="stage-select-container">
+                <div class="stage-buttons">
+                    <button id="stage-fd-btn" class="stage-btn active">終点</button>
+                    <button id="stage-bf-btn" class="stage-btn">戦場</button>
+                    <button id="stage-sbf-btn" class="stage-btn">小戦場</button>
+                    <button id="stage-other-btn" class="stage-btn">その他</button>
+                </div>
+            </div>
+
             <div class="stats-section">
                 <h3>勝率</h3>
                 <div class="stats-cards">
                     <div class="stat-card">
                         <span class="stat-label">直近10戦</span>
-                        <span id="rate-10" class="stat-value">--%</span>
+                        <div class="stat-value-container">
+                            <span id="rate-10" class="stat-value">--%</span>
+                            <button id="match-breakdown-10-btn" class="breakdown-btn hidden">ステージ別</button>
+                        </div>
                     </div>
                     <div class="stat-card">
                         <span class="stat-label">直近50戦</span>
-                        <span id="rate-50" class="stat-value">--%</span>
+                        <div class="stat-value-container">
+                            <span id="rate-50" class="stat-value">--%</span>
+                            <button id="match-breakdown-50-btn" class="breakdown-btn hidden">ステージ別</button>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- 内訳インライン表示領域 -->
+            <div id="match-breakdown-inline-container" class="breakdown-inline-container hidden">
+                <div class="breakdown-inline-header">
+                    <h4 id="match-breakdown-title">直近10戦 ステージ別</h4>
+                </div>
+                <ul id="match-breakdown-list" class="history-list breakdown-list">
+                    <!-- Java Scriptで生成 -->
+                </ul>
             </div>
 
             <div class="history-section">

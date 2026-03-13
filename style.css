@@ -314,6 +314,45 @@ body {
     box-shadow: 0 0 0 #c53030;
 }
 
+/* ステージ選択ボタン */
+.stage-select-container {
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.stage-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.stage-btn {
+    flex: 1;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 12px 0;
+    font-size: 14px;
+    font-weight: bold;
+    color: #4a5568;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stage-btn:hover {
+    background-color: #ebf8ff;
+    border-color: #3182ce;
+    color: #3182ce;
+}
+
+.stage-btn.active {
+    background-color: #3182ce;
+    color: #ffffff;
+    border-color: #3182ce;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(49, 130, 206, 0.3);
+}
+
 .stats-section {
     margin-bottom: 32px;
     text-align: center;
@@ -366,6 +405,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative; /* 子要素の絶対配置のため */
 }
 
 .stat-label {
@@ -374,10 +414,26 @@ body {
     margin-bottom: 4px;
 }
 
+.stat-value-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+}
+
 .stat-value {
     font-size: 24px;
     font-weight: bold;
     color: var(--text-color);
+}
+
+.stat-value-container .breakdown-btn {
+    position: absolute;
+    bottom: -8px; /* カードの右下に配置 */
+    right: -8px;
+    padding: 2px 5px;
+    font-size: 10px;
 }
 
 .history-list {
@@ -403,9 +459,30 @@ body {
     border-bottom: none;
 }
 
+/* 日付＋ステージタグを縦に積むコンテナ */
+.history-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 .history-date {
     color: #718096;
     font-size: 14px;
+}
+
+/* ステージ名タグ */
+.history-stage {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: bold;
+    color: #3182ce;
+    background-color: #ebf8ff;
+    border: 1px solid #bee3f8;
+    border-radius: 4px;
+    padding: 1px 6px;
+    width: fit-content;
+    margin-right: 8px; /* WIN/LOSEとの隙間 */
 }
 
 .history-right {

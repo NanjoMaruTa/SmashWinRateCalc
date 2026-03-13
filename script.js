@@ -40,8 +40,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const breakdownTitle = document.getElementById('breakdown-title');
     const breakdownList = document.getElementById('breakdown-list');
 
+    // 勝敗記録画面のステージ別内訳用
+    const matchBreakdown10Btn = document.getElementById('match-breakdown-10-btn');
+    const matchBreakdown50Btn = document.getElementById('match-breakdown-50-btn');
+    const matchBreakdownInlineContainer = document.getElementById('match-breakdown-inline-container');
+    const matchBreakdownTitle = document.getElementById('match-breakdown-title');
+    const matchBreakdownList = document.getElementById('match-breakdown-list');
+
     // 現在表示中の「内訳」の状態管理
     let activeBreakdownType = null; // '10' or '50' or null
+    let activeMatchBreakdownType = null; // 勝敗記録画面用 '10' or '50' or null
 
     // ローディング画面用
     const loadingOverlay = document.getElementById('loading-overlay');
@@ -86,8 +94,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let cameFromRanking = false; // ランキングから詳細画面へ遷移したかどうかのフラグ
     let cameFromDetailToMatch = false; // 詳細画面から個別の勝負記録画面へ遷移したかどうかのフラグ
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwXjfE25KuGvsV3YZC2MJiPD2v46x-Nqmh-v9ohEtq0U2rbkFX5JYtGpvLohaQNkWetQg/exec';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyVFtkNH-R6C4MEVhCQ3eczrqwDvZLS845UAQxcESxnX7rHRfDx9_UYNOt2-7mSBsjVOw/exec';
     let globalMatchData = {}; // 取得したデータを一時保存する変数
+
+    // ステージID→名前の変換マップ
+    const STAGE_MAP = { 0: '終点', 1: '戦場', 2: '小戦場', 3: 'その他' };
+    // 名前→ステージIDの変換マップ
+    const STAGE_ID_MAP = { '終点': 0, '戦場': 1, '小戦場': 2, 'その他': 3 };
+
+    // ステージ値（数値または旧テキスト）を表示用テキストに変換するユーティリティ
+    function formatStageName(s) {
+        if (s === undefined || s === '') return '';
+        // 数値（新形式）の場合
+        if (typeof s === 'number') return STAGE_MAP[s] ?? '不明';
+        // 文字列の場合（旧データの後方互換）
+        return s;
+    }
 
     // ---- GASとの通信処理 ----
     // 全データ取得
@@ -132,19 +154,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function addMatchResult(result) {
         const timestamp = Date.now();
 
+        // 現在選択中のステージ名を取得し、ID数値に変換して保存
+        const activeStageBtn = document.querySelector('.stage-btn.active');
+        const stageName = activeStageBtn ? activeStageBtn.textContent : '終点';
+        const stage = STAGE_ID_MAP[stageName] ?? 0; // 数値で保存（0=終点、不明ならけ0にフォールバック）
+
         // 画面上には先行して反映させる（レスポンス待ちのラグ軽減）
         if (!globalMatchData[currentMatchKey]) {
             globalMatchData[currentMatchKey] = [];
         }
-        globalMatchData[currentMatchKey].unshift({ d: timestamp, r: result });
+        globalMatchData[currentMatchKey].unshift({ d: timestamp, r: result, s: stage });
         renderMatchStats();
 
-        // GASへ送信
+        // GASへ送信（stageに数値IDを送る）
         sendToGAS({
             action: "addMatch",
             matchKey: currentMatchKey,
             date: timestamp,
-            result: result
+            result: result,
+            stage: stage
         });
     }
 
@@ -213,6 +241,20 @@ document.addEventListener('DOMContentLoaded', () => {
         rate10El.textContent = calcWinRate(recent10);
         rate50El.textContent = calcWinRate(recent50);
 
+        if (recent10.length > 0) {
+            matchBreakdown10Btn.classList.remove('hidden');
+        } else {
+            matchBreakdown10Btn.classList.add('hidden');
+        }
+        matchBreakdown10Btn.onclick = () => toggleMatchBreakdown('10', recent10, "直近10戦 ステージ別");
+
+        if (recent50.length > 0) {
+            matchBreakdown50Btn.classList.remove('hidden');
+        } else {
+            matchBreakdown50Btn.classList.add('hidden');
+        }
+        matchBreakdown50Btn.onclick = () => toggleMatchBreakdown('50', recent50, "直近50戦 ステージ別");
+
         historyCountEl.textContent = `(${history.length})`;
 
         // 履歴リストの描画（新しい順に表示）
@@ -221,9 +263,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = 'history-item';
 
+            // 左側：日付＋ステージタグをまとめたdiv
+            const leftDiv = document.createElement('div');
+            leftDiv.className = 'history-left';
+
             const dateSpan = document.createElement('span');
             dateSpan.className = 'history-date';
             dateSpan.textContent = formatDisplayDate(item.d);
+
+            // ステージ名タグ（右側に配置するため、要素作成のみここで行う）
+            // 数値（新形式）または旧テキストデータの両方に対応
+            const stageText = formatStageName(item.s);
+            const hasStage = stageText !== '';
+            const stageSpan = document.createElement('span');
+            if (hasStage) {
+                stageSpan.className = 'history-stage';
+                stageSpan.textContent = stageText;
+            }
+
+            leftDiv.appendChild(dateSpan);
 
             const rightDiv = document.createElement('div');
             rightDiv.className = 'history-right';
@@ -244,18 +302,101 @@ document.addEventListener('DOMContentLoaded', () => {
                 deleteMatchRecord(item.d); // 日付で一意に特定して削除
             });
 
+            if (hasStage) rightDiv.appendChild(stageSpan);
             rightDiv.appendChild(resultSpan);
             rightDiv.appendChild(deleteBtn);
 
-            li.appendChild(dateSpan);
+            li.appendChild(leftDiv);
             li.appendChild(rightDiv);
             historyListEl.appendChild(li);
         });
     }
 
+    // --- 勝敗記録画面：ステージ別勝率の内訳表示 ---
+    function toggleMatchBreakdown(type, games, titleText) {
+        if (activeMatchBreakdownType === type) {
+            // 同じボタンを押したら閉じる
+            matchBreakdownInlineContainer.classList.add('hidden');
+            activeMatchBreakdownType = null;
+            return;
+        }
+        
+        // 違うボタンを押した、または初めて開く場合
+        activeMatchBreakdownType = type;
+        matchBreakdownTitle.textContent = titleText;
+        matchBreakdownList.innerHTML = '';
+
+        // ステージ別の集計オブジェクトを作成
+        const stageStats = {};
+        Object.keys(STAGE_MAP).forEach(id => {
+            stageStats[id] = { name: STAGE_MAP[id], wins: 0, total: 0 };
+        });
+
+        games.forEach(g => {
+            let sId = g.s;
+            // 旧文字データの場合のID変換と、falsyチェックを厳格に行う
+            if (sId === undefined || sId === null || sId === '') {
+                sId = 0; // 不明なデータは便宜上「終点」にカウントするか、スキップするか
+            } else if (typeof sId === 'string') {
+                sId = STAGE_ID_MAP[sId] ?? 0;
+            }
+            if (stageStats[sId]) {
+                stageStats[sId].total++;
+                if (g.r === 1) stageStats[sId].wins++;
+            }
+        });
+
+        // 配列化して総試合数1以上のステージのみ抽出し、勝率順でソート
+        const breakdownData = Object.values(stageStats)
+            .filter(stats => stats.total > 0)
+            .sort((a, b) => {
+                const rateA = a.wins / a.total;
+                const rateB = b.wins / b.total;
+                if (rateB !== rateA) return rateB - rateA;
+                return b.total - a.total; // 同率なら試合数が多い方を上へ
+            });
+
+        // DOM構築
+        breakdownData.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'ranking-item';
+            li.style.padding = '8px 12px'; // 少しコンパクトに
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'ranking-name';
+            nameSpan.style.flex = '1';
+            nameSpan.textContent = item.name;
+
+            const rateStr = Math.round((item.wins / item.total) * 100) + '%';
+            const rateSpan = document.createElement('span');
+            rateSpan.className = 'ranking-rate';
+            rateSpan.textContent = rateStr;
+
+            const detailSpan = document.createElement('span');
+            detailSpan.style.fontSize = '12px';
+            detailSpan.style.color = '#718096';
+            detailSpan.style.marginLeft = '8px';
+            detailSpan.textContent = `(${item.wins}勝/${item.total}戦)`;
+
+            li.appendChild(nameSpan);
+            const rateWrap = document.createElement('div');
+            rateWrap.appendChild(rateSpan);
+            rateWrap.appendChild(detailSpan);
+            li.appendChild(rateWrap);
+
+            matchBreakdownList.appendChild(li);
+        });
+
+        matchBreakdownInlineContainer.classList.remove('hidden');
+    }
+
     function openMatchView(pId, oId) {
         currentPhase = 'match';
         currentMatchKey = `${pId}_${oId}`;
+
+        // 画面切り替え時に内訳表示レイヤーを閉じる
+        activeMatchBreakdownType = null;
+        matchBreakdownInlineContainer.classList.add('hidden');
 
         // 画面切り替え
         rosterView.classList.add('hidden');
@@ -427,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     breakdownInlineContainer.classList.add('hidden');
                     renderDetailStats(selectedPlayerId);
                 });
-                
+
                 // ホバー時の視覚的フィードバック
                 leftDiv.addEventListener('mouseenter', () => {
                     leftDiv.style.opacity = '0.7';
@@ -622,7 +763,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     detailView.classList.add('hidden'); // 詳細画面を隠す
                     openMatchView(selectedPlayerId, item.opponentId); // selectedPlayerId(自分) vs opponentId(相手) で開く
                 });
-                
+
                 // ホバー時の視覚的フィードバック
                 leftDiv.addEventListener('mouseenter', () => {
                     leftDiv.style.opacity = '0.7';
@@ -680,7 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
             rankingView.classList.remove('hidden');
         } else {
             // それ以外（キャラ選択から来た場合）は対戦相手選択に戻る
-            currentPhase = 'opponent'; 
+            currentPhase = 'opponent';
             rosterView.classList.remove('hidden');
         }
     }
@@ -859,6 +1000,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // 勝敗ボタンイベント
     winBtn.addEventListener('click', () => addMatchResult(1)); // 1: 勝ち
     lossBtn.addEventListener('click', () => addMatchResult(0)); // 0: 負け
+
+    // ステージ選択ボタンイベント
+    const stageBtns = document.querySelectorAll('.stage-btn');
+    stageBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // 一度すべてのactiveクラスを外す
+            stageBtns.forEach(b => b.classList.remove('active'));
+            // クリックされたボタンにactiveクラスを付ける
+            btn.classList.add('active');
+        });
+    });
 
     // ---- キャラクターボタンの生成 ----
     for (let i = 0; i < totalCharacters; i++) {
