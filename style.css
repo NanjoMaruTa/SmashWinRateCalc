@@ -799,14 +799,14 @@ body {
 
     /* モバイル: 勝率のステージ別ボタンのサイズをさらに小さくし、テキストを「ス別」に変更 */
     .stat-value-container .breakdown-btn {
-        padding: 1px 4px;
+        padding: 1px 3px;
         font-size: 9px;
         color: transparent; /* 元の文字を隠す */
         width: 32px; /* 小さい幅に固定 */
     }
     .stat-value-container .breakdown-btn::before {
         content: "ス別";
-        color: #fff; /* ボタンの文字色 */
+        color: #0077ff; /* ボタンの文字色 */
         position: absolute;
         left: 50%;
         top: 50%;
@@ -823,4 +823,5 @@ body {
     .breakdown-list-name {
         margin-left: 2px;
     }
+
 }
