@@ -405,7 +405,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: relative; /* 子要素の絶対配置のため */
+    position: relative;
+    /* 子要素の絶対配置のため */
 }
 
 .stat-label {
@@ -430,7 +431,8 @@ body {
 
 .stat-value-container .breakdown-btn {
     position: absolute;
-    bottom: -8px; /* カードの右下に配置 */
+    bottom: -8px;
+    /* カードの右下に配置 */
     right: -8px;
     padding: 2px 5px;
     font-size: 10px;
@@ -485,7 +487,8 @@ body {
     border-radius: 4px;
     padding: 1px 6px;
     width: fit-content;
-    margin-right: 8px; /* WIN/LOSEとの隙間 */
+    margin-right: 8px;
+    /* WIN/LOSEとの隙間 */
 }
 
 .history-right {
@@ -801,12 +804,16 @@ body {
     .stat-value-container .breakdown-btn {
         padding: 1px 3px;
         font-size: 9px;
-        color: transparent; /* 元の文字を隠す */
-        width: 32px; /* 小さい幅に固定 */
+        color: transparent;
+        /* 元の文字を隠す */
+        width: 32px;
+        /* 小さい幅に固定 */
     }
+
     .stat-value-container .breakdown-btn::before {
         content: "ス別";
-        color: #0077ff; /* ボタンの文字色 */
+        color: #0077ff;
+        /* ボタンの文字色 */
         position: absolute;
         left: 50%;
         top: 50%;
@@ -823,5 +830,4 @@ body {
     .breakdown-list-name {
         margin-left: 2px;
     }
-
 }

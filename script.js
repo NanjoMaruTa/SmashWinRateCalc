@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailRate10 = document.getElementById('detail-rate-10');
     const detailRate50 = document.getElementById('detail-rate-50');
     const detailRankingListEl = document.getElementById('detail-ranking-list');
+    const detailStageRankingListEl = document.getElementById('detail-stage-ranking-list');
+    const detailStageStatsContainer = document.getElementById('detail-stage-stats-container');
 
     // 内訳インライン用のDOM取得
     const breakdown10Btn = document.getElementById('breakdown-10-btn');
@@ -709,6 +711,87 @@ document.addEventListener('DOMContentLoaded', () => {
         // 50戦内訳ボタンイベント
         breakdown50Btn.onclick = () => toggleBreakdown('50', recent50, "直近50戦 内訳");
 
+        // --- ステージ別勝率処理 ---
+        detailStageRankingListEl.innerHTML = '';
+        const stageStats = {};
+        Object.keys(STAGE_MAP).forEach(id => {
+            stageStats[id] = { name: STAGE_MAP[id], wins: 0, total: 0 };
+        });
+
+        // 全試合からステージごとの勝率を計算
+        allGames.forEach(g => {
+            let sId = g.s;
+            if (sId === undefined || sId === null || sId === '') {
+                sId = 0; // 不明なデータは終点にフォールバック
+            } else if (typeof sId === 'string') {
+                sId = STAGE_ID_MAP[sId] ?? 0;
+            }
+            if (stageStats[sId]) {
+                stageStats[sId].total++;
+                if (g.r === 1) stageStats[sId].wins++;
+            }
+        });
+
+        // 勝率で降順ソート
+        const stageRankingData = Object.values(stageStats)
+            .filter(stats => stats.total > 0)
+            .sort((a, b) => {
+                const rateA = a.wins / a.total;
+                const rateB = b.wins / b.total;
+                if (rateB !== rateA) return rateB - rateA;
+                return b.total - a.total;
+            });
+
+        // ステージ別勝率の描画
+        if (stageRankingData.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.textContent = '対戦データがありません。';
+            li.style.justifyContent = 'center';
+            detailStageRankingListEl.appendChild(li);
+        } else {
+            stageRankingData.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'ranking-item';
+                li.style.padding = '8px 12px';
+
+                const rankSpan = document.createElement('span');
+                rankSpan.className = 'ranking-rank';
+                rankSpan.textContent = `${index + 1}位`;
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'ranking-name';
+                nameSpan.style.flex = '1';
+                nameSpan.textContent = item.name;
+
+                const rateStr = Math.round((item.wins / item.total) * 100) + '%';
+                const rateSpan = document.createElement('span');
+                rateSpan.className = 'ranking-rate';
+                rateSpan.textContent = rateStr;
+
+                const detailSpan = document.createElement('span');
+                detailSpan.style.fontSize = '12px';
+                detailSpan.style.color = '#718096';
+                detailSpan.style.marginLeft = '8px';
+                detailSpan.textContent = `(${item.wins}勝/${item.total}戦)`;
+
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'ranking-left-group';
+                leftDiv.appendChild(rankSpan);
+                leftDiv.appendChild(nameSpan);
+
+                const rightDiv = document.createElement('div');
+                rightDiv.style.display = 'flex';
+                rightDiv.style.alignItems = 'baseline';
+                rightDiv.appendChild(rateSpan);
+                rightDiv.appendChild(detailSpan);
+
+                li.appendChild(leftDiv);
+                li.appendChild(rightDiv);
+                detailStageRankingListEl.appendChild(li);
+            });
+        }
+
         // --- 相手ランキング処理 ---
         // 勝率で降順ソート
         opponentRankingData.sort((a, b) => {
@@ -804,6 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 詳細画面を開くときは内訳表示をリセット
         activeBreakdownType = null;
         breakdownInlineContainer.classList.add('hidden');
+        detailStageStatsContainer.classList.add('hidden');
         renderDetailStats(selectedPlayerId);
     }
 
@@ -831,6 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 同じボタンが押された場合は閉じる（トグル）
         if (activeBreakdownType === type) {
             breakdownInlineContainer.classList.add('hidden');
+            detailStageStatsContainer.classList.add('hidden');
             activeBreakdownType = null;
             return;
         }
@@ -883,25 +968,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 leftDiv.appendChild(imgWrap);
                 leftDiv.appendChild(oppSpan);
 
-                // キャラ名（左側グループ）クリックで勝敗記録画面へ遷移
-                leftDiv.style.cursor = 'pointer';
-                leftDiv.addEventListener('click', () => {
-                    cameFromDetailToMatch = true;
-                    detailView.classList.add('hidden'); // 詳細画面を隠す
-                    openMatchView(selectedPlayerId, item.opponentId); // selectedPlayerId(自分) vs opponentId(相手) で開く
-                });
-
-                // ホバー時の視覚的フィードバック
-                leftDiv.addEventListener('mouseenter', () => {
-                    leftDiv.style.opacity = '0.7';
-                });
-                leftDiv.addEventListener('mouseleave', () => {
-                    leftDiv.style.opacity = '1';
-                });
-
-                // 勝敗
+                // 勝敗とステージ情報（右側）
                 const rightDiv = document.createElement('div');
                 rightDiv.className = 'history-right';
+
+                // ステージ名タグの追加
+                const stageText = formatStageName(item.s);
+                if (stageText !== '') {
+                    const stageSpan = document.createElement('span');
+                    stageSpan.className = 'history-stage';
+                    // styles.css に history-stage がある前提（勝敗記録画面用と同じクラスを使用）
+                    stageSpan.textContent = stageText;
+                    rightDiv.appendChild(stageSpan);
+                }
+
                 const resultSpan = document.createElement('span');
                 if (item.r === 1) {
                     resultSpan.className = 'history-result win';
@@ -920,8 +1000,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         breakdownInlineContainer.classList.remove('hidden');
+        detailStageStatsContainer.classList.remove('hidden');
     }
-
     // ---- イベントリスナー設定 ----
 
     // 勝敗記録画面の戻るボタン
