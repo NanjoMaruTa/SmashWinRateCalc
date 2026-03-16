@@ -833,27 +833,34 @@ body {
 
     /* モバイル版における内訳リスト右側の要素はみ出し防止 */
     .history-right {
-        gap: 4px; /* WIN/LOSEとステージ名の間の隙間を限界まで詰める */
+        gap: 4px;
+        /* WIN/LOSEとステージ名の間の隙間を限界まで詰める */
     }
 
     .history-stage {
-        font-size: 9px; /* ステージ名のフォントサイズを極小化 */
-        padding: 1px 3px; /* 枠の余白も極力削る */
-        margin-right: 4px; /* 右側の余白を狭くする */
-        white-space: nowrap; /* ステージ名が改行されないようにする */
+        font-size: 9px;
+        /* ステージ名のフォントサイズを極小化 */
+        padding: 1px 3px;
+        /* 枠の余白も極力削る */
+        margin-right: 4px;
+        /* 右側の余白を狭くする */
+        white-space: nowrap;
+        /* ステージ名が改行されないようにする */
     }
 
     .history-result.win,
     .history-result.loss {
-        font-size: 11px; /* WIN/LOSEの文字をかなり小さくする */
+        font-size: 11px;
+        /* WIN/LOSEの文字をかなり小さくする */
     }
 
     .history-item {
         padding: 10px 8px; /* リスト全体の左右の余白を削って領域を確保 */
     }
 
-    /* 内訳リストなどでの日付テキストのサイズ縮小 */
+    /* 詳細勝率画面の内訳リストでのみ日付テキストのサイズ縮小と改行禁止 */
     .breakdown-list .history-date {
         font-size: 11px;
+        white-space: nowrap;
     }
 }
