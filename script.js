@@ -969,6 +969,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 leftDiv.appendChild(imgWrap);
                 leftDiv.appendChild(oppSpan);
 
+                // キャラ名（左側グループ）クリックで勝敗記録画面へ遷移
+                leftDiv.style.cursor = 'pointer';
+                leftDiv.addEventListener('click', () => {
+                    cameFromDetailToMatch = true;
+                    detailView.classList.add('hidden'); // 詳細画面を隠す
+                    openMatchView(selectedPlayerId, item.opponentId); // selectedPlayerId(自分) vs opponentId(相手) で開く
+                });
+
+                // ホバー時の視覚的フィードバック
+                leftDiv.addEventListener('mouseenter', () => {
+                    leftDiv.style.opacity = '0.7';
+                });
+                leftDiv.addEventListener('mouseleave', () => {
+                    leftDiv.style.opacity = '1';
+                });
+
                 // 勝敗とステージ情報（右側）
                 const rightDiv = document.createElement('div');
                 rightDiv.className = 'history-right';
