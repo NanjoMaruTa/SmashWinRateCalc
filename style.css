@@ -853,7 +853,7 @@ body {
     }
 
     /* 内訳リストなどでの日付テキストのサイズ縮小 */
-    .history-date {
-        font-size: 9px;
+    .breakdown-list .history-date {
+        font-size: 7px;
     }
 }
