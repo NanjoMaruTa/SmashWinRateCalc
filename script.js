@@ -205,15 +205,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatDisplayDate(dateData) {
         // 旧フォーマット ("260309" のような文字列) の場合
         if (typeof dateData === 'string' && dateData.length === 6) {
-            return `20${dateData.slice(0, 2)}/${dateData.slice(2, 4)}/${dateData.slice(4, 6)}`;
+            return `${dateData.slice(2, 4)}/${dateData.slice(4, 6)}`;
         }
         // 新フォーマット (UNIXタイムスタンプ) の場合
         if (typeof dateData === 'number') {
             const d = new Date(dateData);
-            const yy = String(d.getFullYear());
             const mm = String(d.getMonth() + 1).padStart(2, '0');
             const dd = String(d.getDate()).padStart(2, '0');
-            return `${yy}/${mm}/${dd}`;
+            const hh = String(d.getHours()).padStart(2, '0');
+            const min = String(d.getMinutes()).padStart(2, '0');
+            return `${mm}/${dd} ${hh}:${min}`;
         }
         return dateData;
     }
