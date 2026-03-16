@@ -854,6 +854,6 @@ body {
 
     /* 内訳リストなどでの日付テキストのサイズ縮小 */
     .history-date {
-        font-size: 11px;
+        font-size: 9px;
     }
 }
