@@ -831,13 +831,13 @@ body {
         margin-left: 2px;
     }
 
-    /* モバイル版における内訳リスト右側の要素はみ出し防止 */
-    .history-right {
+    /* モバイル版における内訳リスト右側の要素はみ出し防止 (.breakdown-list に限定) */
+    .breakdown-list .history-right {
         gap: 4px;
         /* WIN/LOSEとステージ名の間の隙間を限界まで詰める */
     }
 
-    .history-stage {
+    .breakdown-list .history-stage {
         font-size: 9px;
         /* ステージ名のフォントサイズを極小化 */
         padding: 1px 3px;
@@ -848,13 +848,13 @@ body {
         /* ステージ名が改行されないようにする */
     }
 
-    .history-result.win,
-    .history-result.loss {
+    .breakdown-list .history-result.win,
+    .breakdown-list .history-result.loss {
         font-size: 11px;
         /* WIN/LOSEの文字をかなり小さくする */
     }
 
-    .history-item {
+    .breakdown-list .history-item {
         padding: 10px 8px; /* リスト全体の左右の余白を削って領域を確保 */
     }
 
