@@ -961,7 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const oppSpan = document.createElement('span');
                 oppSpan.className = 'ranking-name breakdown-list-name';
                 oppSpan.style.flexGrow = '1';
-                oppSpan.textContent = `vs ${oppName}`;
+                oppSpan.textContent = `${oppName}`;
 
                 const leftDiv = document.createElement('div');
                 leftDiv.className = 'ranking-left-group';
