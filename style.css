@@ -740,6 +740,7 @@ body {
     font-size: 12px;
     font-weight: bold;
     color: #4a5568;
+    white-space: nowrap;
 }
 
 /* ステージ別勝率タブボタン */
@@ -764,6 +765,7 @@ body {
     font-size: 22px;
     font-weight: bold;
     color: #3182ce;
+    white-space: nowrap;
 }
 
 .stage-stat-rate.no-data {
@@ -774,6 +776,7 @@ body {
 .stage-stat-detail {
     font-size: 10px;
     color: #a0aec0;
+    white-space: nowrap;
 }
 
 /* ステージ別内訳ボタン */
@@ -904,6 +907,20 @@ body {
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
+    }
+
+    /* モバイル: ステージ別勝率カードのパディングとフォントサイズを縮小して画面内に収める */
+    .stage-stats-grid {
+        gap: 4px;
+        padding: 4px;
+    }
+    
+    .stage-stat-card {
+        padding: 8px 2px 20px 2px;
+    }
+    
+    .stage-stat-rate {
+        font-size: 18px;
     }
 
     /* 詳細勝率画面・内訳リストの余白を縮小 */
