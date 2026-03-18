@@ -709,6 +709,92 @@ body {
     margin-left: 12px;
 }
 
+/* ステージ別勝率グリッド */
+.stage-stats-grid {
+    list-style: none;
+    padding: 8px;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    border: none;
+    max-height: none;
+    overflow: visible;
+}
+
+.stage-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 6px 22px 6px;
+    /* 下部にボタン用のスペース確保 */
+    text-align: center;
+    gap: 4px;
+    position: relative;
+}
+
+.stage-stat-name {
+    font-size: 12px;
+    font-weight: bold;
+    color: #4a5568;
+}
+
+/* ステージ別勝率タブボタン */
+.stage-tab-btn {
+    padding: 2px 8px;
+    font-size: 11px;
+    background-color: transparent;
+    color: #a0aec0;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.stage-tab-btn.active {
+    background-color: #3182ce;
+    color: white;
+    border-color: #3182ce;
+}
+
+.stage-stat-rate {
+    font-size: 22px;
+    font-weight: bold;
+    color: #3182ce;
+}
+
+.stage-stat-rate.no-data {
+    color: #a0aec0;
+    /* 未対戦時はグレー */
+}
+
+.stage-stat-detail {
+    font-size: 10px;
+    color: #a0aec0;
+}
+
+/* ステージ別内訳ボタン */
+.stage-breakdown-btn {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    padding: 1px 5px;
+    font-size: 9px;
+    background-color: #ebf8ff;
+    border: 1px solid #bee3f8;
+    color: #3182ce;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stage-breakdown-btn:hover {
+    background-color: #bee3f8;
+}
+
 /* ローディング画面エリア */
 .loading-overlay {
     position: fixed;
@@ -855,7 +941,8 @@ body {
     }
 
     .breakdown-list .history-item {
-        padding: 10px 8px; /* リスト全体の左右の余白を削って領域を確保 */
+        padding: 10px 8px;
+        /* リスト全体の左右の余白を削って領域を確保 */
     }
 
     /* 詳細勝率画面の内訳リストでのみ日付テキストのサイズ縮小と改行禁止 */

@@ -50,21 +50,17 @@
             </div>
 
             <div class="stats-section">
-                <h3>勝率</h3>
-                <div class="stats-cards">
-                    <div class="stat-card">
-                        <span class="stat-label">直近10戦</span>
-                        <div class="stat-value-container">
-                            <span id="rate-10" class="stat-value">--%</span>
-                            <button id="match-breakdown-10-btn" class="breakdown-btn hidden">ステージ別</button>
-                        </div>
+                <!-- 総合勝率表示領域 (詳細勝率画面と同じレイアウトを使用) -->
+                <div class="detail-overview">
+                    <div class="detail-overview-item">
+                        <span class="detail-overview-label">直近10戦 総合勝率</span>
+                        <span id="rate-10" class="detail-overview-value">--%</span>
+                        <button id="match-breakdown-10-btn" class="breakdown-btn hidden">内訳</button>
                     </div>
-                    <div class="stat-card">
-                        <span class="stat-label">直近50戦</span>
-                        <div class="stat-value-container">
-                            <span id="rate-50" class="stat-value">--%</span>
-                            <button id="match-breakdown-50-btn" class="breakdown-btn hidden">ステージ別</button>
-                        </div>
+                    <div class="detail-overview-item">
+                        <span class="detail-overview-label">直近50戦 総合勝率</span>
+                        <span id="rate-50" class="detail-overview-value">--%</span>
+                        <button id="match-breakdown-50-btn" class="breakdown-btn hidden">内訳</button>
                     </div>
                 </div>
             </div>
@@ -76,6 +72,16 @@
                 </div>
                 <ul id="match-breakdown-list" class="history-list breakdown-list">
                     <!-- Java Scriptで生成 -->
+                </ul>
+            </div>
+
+            <!-- ステージ別内訳インライン表示領域 -->
+            <div id="match-stage-breakdown-inline-container" class="breakdown-inline-container hidden" style="margin-top: 10px;">
+                <div class="breakdown-inline-header">
+                    <h4 id="match-stage-breakdown-title">ステージ 内訳</h4>
+                </div>
+                <ul id="match-stage-breakdown-list" class="history-list breakdown-list">
+                    <!-- JavaScriptで生成 -->
                 </ul>
             </div>
 
@@ -141,11 +147,25 @@
             </div>
 
             <!-- ステージ別勝率表示領域 -->
-            <div id="detail-stage-stats-container" class="breakdown-inline-container hidden" style="margin-top: 10px;">
-                <div class="breakdown-inline-header">
-                    <h4>ステージ別勝率</h4>
+            <div id="detail-stage-stats-container" class="breakdown-inline-container" style="margin-top: 10px;">
+                <div class="breakdown-inline-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="margin: 0;">ステージ別勝率</h4>
+                    <div class="stage-tabs" style="display: flex; gap: 4px;">
+                        <button id="stage-tab-50-btn" class="stage-tab-btn active">50戦</button>
+                        <button id="stage-tab-10-btn" class="stage-tab-btn">10戦</button>
+                    </div>
                 </div>
                 <ul id="detail-stage-ranking-list" class="history-list breakdown-list">
+                    <!-- JavaScriptで生成 -->
+                </ul>
+            </div>
+
+            <!-- ステージ別内訳インライン表示領域 -->
+            <div id="stage-breakdown-inline-container" class="breakdown-inline-container hidden" style="margin-top: 10px;">
+                <div class="breakdown-inline-header">
+                    <h4 id="stage-breakdown-title">ステージ 内訳</h4>
+                </div>
+                <ul id="stage-breakdown-list" class="history-list breakdown-list">
                     <!-- JavaScriptで生成 -->
                 </ul>
             </div>
@@ -153,7 +173,7 @@
             <div class="history-section">
                 <!-- マッチアップ別ランキング -->
                 <div class="history-header">
-                    <h3>得意な相手ランキング</h3>
+                    <h3>有利対面ランキング</h3>
                 </div>
                 <ul id="detail-ranking-list" class="history-list ranking-list">
                     <!-- JavaScriptでランキングを生成 -->

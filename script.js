@@ -34,6 +34,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailRankingListEl = document.getElementById('detail-ranking-list');
     const detailStageRankingListEl = document.getElementById('detail-stage-ranking-list');
     const detailStageStatsContainer = document.getElementById('detail-stage-stats-container');
+    const stageTab10Btn = document.getElementById('stage-tab-10-btn');
+    const stageTab50Btn = document.getElementById('stage-tab-50-btn');
+
+    // ステージ別内訳用コンテナ（ステージ別勝率と有利対面ランキングの間）
+    const stageBreakdownContainer = document.getElementById('stage-breakdown-inline-container');
+    const stageBreakdownTitle = document.getElementById('stage-breakdown-title');
+    const stageBreakdownList = document.getElementById('stage-breakdown-list');
+    let activeStageBreakdownType = null; // 現在表示中のステージ内訳のkey
 
     // 内訳インライン用のDOM取得
     const breakdown10Btn = document.getElementById('breakdown-10-btn');
@@ -48,6 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const matchBreakdownInlineContainer = document.getElementById('match-breakdown-inline-container');
     const matchBreakdownTitle = document.getElementById('match-breakdown-title');
     const matchBreakdownList = document.getElementById('match-breakdown-list');
+
+    // 勝敗記録画面のステージごとの個別の内訳リスト用
+    const matchStageBreakdownContainer = document.getElementById('match-stage-breakdown-inline-container');
+    const matchStageBreakdownTitle = document.getElementById('match-stage-breakdown-title');
+    const matchStageBreakdownList = document.getElementById('match-stage-breakdown-list');
+    let activeMatchStageBreakdownType = null; // 現在表示中のステージごとの内訳のkey
 
     // 現在表示中の「内訳」の状態管理
     let activeBreakdownType = null; // '10' or '50' or null
@@ -93,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPhase = 'player'; // 'player' or 'opponent' or 'match' or 'ranking' or 'detail'
     let currentMatchKey = '';
     let currentRankingType = 10; // 10 or 50
+    let currentDetailStageTab = 50; // 詳細勝率画面のステージ別勝率タブ (10 or 50)
     let cameFromRanking = false; // ランキングから詳細画面へ遷移したかどうかのフラグ
     let cameFromDetailToMatch = false; // 詳細画面から個別の勝負記録画面へ遷移したかどうかのフラグ
 
@@ -317,6 +332,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 勝敗記録画面：ステージ別勝率の内訳表示 ---
     function toggleMatchBreakdown(type, games, titleText) {
+        // ステージ固有の内訳が開いていれば閉じる（排他制御）
+        matchStageBreakdownContainer.classList.add('hidden');
+        activeMatchStageBreakdownType = null;
+
         if (activeMatchBreakdownType === type) {
             // 同じボタンを押したら閉じる
             matchBreakdownInlineContainer.classList.add('hidden');
@@ -349,48 +368,139 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 配列化して総試合数1以上のステージのみ抽出し、勝率順でソート
-        const breakdownData = Object.values(stageStats)
-            .filter(stats => stats.total > 0)
-            .sort((a, b) => {
-                const rateA = a.wins / a.total;
-                const rateB = b.wins / b.total;
-                if (rateB !== rateA) return rateB - rateA;
-                return b.total - a.total; // 同率なら試合数が多い方を上へ
-            });
+        // UIの初期化
+        matchBreakdownList.innerHTML = '';
+        matchBreakdownList.className = 'stage-stats-grid';
 
-        // DOM構築
-        breakdownData.forEach(item => {
-            const li = document.createElement('li');
-            li.className = 'ranking-item';
-            li.style.padding = '8px 12px'; // 少しコンパクトに
+        // 終点・戦場・小戦場・その他の順で固定表示
+        const STAGE_ORDER = [0, 1, 2, 3];
+        STAGE_ORDER.forEach(id => {
+            const stat = stageStats[id];
+            const card = document.createElement('li');
+            card.className = 'stage-stat-card';
 
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'ranking-name';
-            nameSpan.style.flex = '1';
-            nameSpan.textContent = item.name;
+            const nameEl = document.createElement('div');
+            nameEl.className = 'stage-stat-name';
+            nameEl.textContent = STAGE_MAP[id];
 
-            const rateStr = Math.round((item.wins / item.total) * 100) + '%';
-            const rateSpan = document.createElement('span');
-            rateSpan.className = 'ranking-rate';
-            rateSpan.textContent = rateStr;
+            const rateEl = document.createElement('div');
+            if (stat.total > 0) {
+                const pct = Math.round((stat.wins / stat.total) * 100);
+                rateEl.textContent = `${pct}%`;
+                rateEl.className = 'stage-stat-rate';
+            } else {
+                rateEl.textContent = '--';
+                rateEl.className = 'stage-stat-rate no-data'; // グレー表示
+            }
 
-            const detailSpan = document.createElement('span');
-            detailSpan.style.fontSize = '12px';
-            detailSpan.style.color = '#718096';
-            detailSpan.style.marginLeft = '8px';
-            detailSpan.textContent = `(${item.wins}勝/${item.total}戦)`;
+            const detailEl = document.createElement('div');
+            detailEl.className = 'stage-stat-detail';
+            detailEl.textContent = stat.total > 0 ? `${stat.wins}勝/${stat.total}戦` : '未対戦';
 
-            li.appendChild(nameSpan);
-            const rateWrap = document.createElement('div');
-            rateWrap.appendChild(rateSpan);
-            rateWrap.appendChild(detailSpan);
-            li.appendChild(rateWrap);
+            card.appendChild(nameEl);
+            card.appendChild(rateEl);
+            card.appendChild(detailEl);
 
-            matchBreakdownList.appendChild(li);
+            // 内訳ボタン（該当ステージのみの試合）
+            if (stat.total > 0) {
+                // GAMESから特定のステージの試合のみ抽出する
+                const stageGames = games.filter(g => {
+                    let sId = g.s;
+                    if (sId === undefined || sId === null || sId === '') sId = 0;
+                    else if (typeof sId === 'string') sId = STAGE_ID_MAP[sId] ?? 0;
+                    return sId === id;
+                });
+
+                const breakdownBtn = document.createElement('button');
+                breakdownBtn.className = 'stage-breakdown-btn';
+                breakdownBtn.textContent = '内訳';
+                // 期間タイトルが「直近10戦 ステージ別」といった形式なので、文字を整形する
+                const baseTitle = titleText.replace(' ステージ別', '');
+                breakdownBtn.onclick = () => toggleMatchStageBreakdown(id, stageGames, `${baseTitle} ${STAGE_MAP[id]} 内訳`);
+                card.appendChild(breakdownBtn);
+            }
+
+            matchBreakdownList.appendChild(card);
         });
 
         matchBreakdownInlineContainer.classList.remove('hidden');
+    }
+
+    // ---- 勝敗記録画面：ステージ別内訳インライン処理（独立エリア） ----
+    function toggleMatchStageBreakdown(stageId, games, title) {
+        // 同じステージボタンが押された場合は閉じる（トグル）
+        if (activeMatchStageBreakdownType === stageId) {
+            matchStageBreakdownContainer.classList.add('hidden');
+            activeMatchStageBreakdownType = null;
+            return;
+        }
+
+        // 違うボタンが押された（または初回）場合は更新して開く
+        activeMatchStageBreakdownType = stageId;
+        matchStageBreakdownTitle.textContent = title;
+        matchStageBreakdownList.innerHTML = '';
+
+        if (games.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.textContent = 'データがありません。';
+            li.style.justifyContent = 'center';
+            matchStageBreakdownList.appendChild(li);
+        } else {
+            games.forEach((item) => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+
+                // 左側グループ（日付）
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'history-left-group';
+
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'history-date';
+                dateSpan.textContent = formatDisplayDate(item.d);
+
+                leftDiv.appendChild(dateSpan);
+
+                // 右側グループ（対戦相手・勝敗・削除ボタン）は通常の対戦履歴リストと同様に見せる
+                const rightDiv = document.createElement('div');
+                rightDiv.className = 'history-right';
+
+                const resultSpan = document.createElement('span');
+                if (item.r === 1) {
+                    resultSpan.className = 'history-result win';
+                    resultSpan.textContent = 'WIN';
+                } else {
+                    resultSpan.className = 'history-result loss';
+                    resultSpan.textContent = 'LOSE';
+                }
+
+                // 勝敗記録画面の内訳であるため、相手キャラ名や削除ボタンも必要であればここで生成・表示する
+                // （詳細勝率画面では不要だった削除ボタンなどを置く）
+                const oppNameItem = characterList[item.opponentId || currentMatchKey.split('_')[1]];
+                const oppSpan = document.createElement('span');
+                oppSpan.className = 'ranking-name';
+                oppSpan.textContent = `vs ${oppNameItem}`;
+                oppSpan.style.marginRight = '8px';
+                oppSpan.style.flex = '1';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-history-btn';
+                deleteBtn.textContent = '消去';
+                deleteBtn.addEventListener('click', () => {
+                    deleteMatchRecord(item.d);
+                });
+
+                rightDiv.appendChild(oppSpan);
+                rightDiv.appendChild(resultSpan);
+                rightDiv.appendChild(deleteBtn);
+
+                li.appendChild(leftDiv);
+                li.appendChild(rightDiv);
+                matchStageBreakdownList.appendChild(li);
+            });
+        }
+
+        matchStageBreakdownContainer.classList.remove('hidden');
     }
 
     function openMatchView(pId, oId) {
@@ -399,7 +509,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 画面切り替え時に内訳表示レイヤーを閉じる
         activeMatchBreakdownType = null;
+        activeMatchStageBreakdownType = null;
         matchBreakdownInlineContainer.classList.add('hidden');
+        matchStageBreakdownContainer.classList.add('hidden');
 
         // 画面切り替え
         rosterView.classList.add('hidden');
@@ -713,85 +825,97 @@ document.addEventListener('DOMContentLoaded', () => {
         breakdown50Btn.onclick = () => toggleBreakdown('50', recent50, "直近50戦 内訳");
 
         // --- ステージ別勝率処理 ---
-        detailStageRankingListEl.innerHTML = '';
-        const stageStats = {};
-        Object.keys(STAGE_MAP).forEach(id => {
-            stageStats[id] = { name: STAGE_MAP[id], wins: 0, total: 0 };
-        });
+        function renderStageStats(limit) {
+            currentDetailStageTab = limit;
 
-        // 全試合からステージごとの勝率を計算
-        allGames.forEach(g => {
-            let sId = g.s;
-            if (sId === undefined || sId === null || sId === '') {
-                sId = 0; // 不明なデータは終点にフォールバック
-            } else if (typeof sId === 'string') {
-                sId = STAGE_ID_MAP[sId] ?? 0;
+            // タブの見た目更新
+            if (limit === 10) {
+                stageTab10Btn.classList.add('active');
+                stageTab50Btn.classList.remove('active');
+            } else {
+                stageTab50Btn.classList.add('active');
+                stageTab10Btn.classList.remove('active');
             }
-            if (stageStats[sId]) {
-                stageStats[sId].total++;
-                if (g.r === 1) stageStats[sId].wins++;
-            }
-        });
 
-        // 勝率で降順ソート
-        const stageRankingData = Object.values(stageStats)
-            .filter(stats => stats.total > 0)
-            .sort((a, b) => {
-                const rateA = a.wins / a.total;
-                const rateB = b.wins / b.total;
-                if (rateB !== rateA) return rateB - rateA;
-                return b.total - a.total;
+            detailStageRankingListEl.innerHTML = '';
+            detailStageRankingListEl.className = 'stage-stats-grid';
+
+            const stageStats = {};
+            // ステージごとの内訳用履歴を保持する配列
+            const stageHistory = {};
+            Object.keys(STAGE_MAP).forEach(id => {
+                stageStats[id] = { name: STAGE_MAP[id], wins: 0, total: 0 };
+                stageHistory[id] = [];
             });
 
-        // ステージ別勝率の描画
-        if (stageRankingData.length === 0) {
-            const li = document.createElement('li');
-            li.className = 'history-item';
-            li.textContent = '対戦データがありません。';
-            li.style.justifyContent = 'center';
-            detailStageRankingListEl.appendChild(li);
-        } else {
-            stageRankingData.forEach((item, index) => {
-                const li = document.createElement('li');
-                li.className = 'ranking-item';
-                li.style.padding = '8px 12px';
+            // allGames(新しい順ソート済み) から各ステージごとに上限limitまで集計
+            allGames.forEach(g => {
+                let sId = g.s;
+                if (sId === undefined || sId === null || sId === '') {
+                    sId = 0; // 不明なデータは終点にフォールバック
+                } else if (typeof sId === 'string') {
+                    sId = STAGE_ID_MAP[sId] ?? 0;
+                }
+                
+                // そのステージの集計が上限に達していなければカウントし、履歴に追加
+                if (stageStats[sId] && stageStats[sId].total < limit) {
+                    stageStats[sId].total++;
+                    if (g.r === 1) stageStats[sId].wins++;
+                    stageHistory[sId].push(g);
+                }
+            });
 
-                const rankSpan = document.createElement('span');
-                rankSpan.className = 'ranking-rank';
-                rankSpan.textContent = `${index + 1}位`;
+            const STAGE_ORDER = [0, 1, 2, 3]; // 終点・戦場・小戦場・その他の順
+            STAGE_ORDER.forEach(id => {
+                const stat = stageStats[id];
+                const card = document.createElement('li');
+                card.className = 'stage-stat-card';
 
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'ranking-name';
-                nameSpan.style.flex = '1';
-                nameSpan.textContent = item.name;
+                const nameEl = document.createElement('div');
+                nameEl.className = 'stage-stat-name';
+                nameEl.textContent = STAGE_MAP[id];
 
-                const rateStr = Math.round((item.wins / item.total) * 100) + '%';
-                const rateSpan = document.createElement('span');
-                rateSpan.className = 'ranking-rate';
-                rateSpan.textContent = rateStr;
+                const rateEl = document.createElement('div');
+                if (stat.total > 0) {
+                    const pct = Math.round((stat.wins / stat.total) * 100);
+                    rateEl.textContent = `${pct}%`;
+                    rateEl.className = 'stage-stat-rate';
+                } else {
+                    rateEl.textContent = '--';
+                    rateEl.className = 'stage-stat-rate no-data'; // グレー
+                }
 
-                const detailSpan = document.createElement('span');
-                detailSpan.style.fontSize = '12px';
-                detailSpan.style.color = '#718096';
-                detailSpan.style.marginLeft = '8px';
-                detailSpan.textContent = `(${item.wins}勝/${item.total}戦)`;
+                const detailEl = document.createElement('div');
+                detailEl.className = 'stage-stat-detail';
+                detailEl.textContent = stat.total > 0 ? `${stat.wins}勝/${stat.total}戦` : '未対戦';
 
-                const leftDiv = document.createElement('div');
-                leftDiv.className = 'ranking-left-group';
-                leftDiv.appendChild(rankSpan);
-                leftDiv.appendChild(nameSpan);
+                card.appendChild(nameEl);
+                card.appendChild(rateEl);
+                card.appendChild(detailEl);
 
-                const rightDiv = document.createElement('div');
-                rightDiv.style.display = 'flex';
-                rightDiv.style.alignItems = 'baseline';
-                rightDiv.appendChild(rateSpan);
-                rightDiv.appendChild(detailSpan);
+                // 内訳ボタン（該当ステージのみの上限集計分の試合）
+                if (stat.total > 0) {
+                    const breakdownBtn = document.createElement('button');
+                    breakdownBtn.className = 'stage-breakdown-btn';
+                    breakdownBtn.textContent = '内訳';
+                    breakdownBtn.onclick = () => toggleStageBreakdown(id, stageHistory[id], `${limit}戦 ${STAGE_MAP[id]} 内訳`);
+                    card.appendChild(breakdownBtn);
+                }
 
-                li.appendChild(leftDiv);
-                li.appendChild(rightDiv);
-                detailStageRankingListEl.appendChild(li);
+                detailStageRankingListEl.appendChild(card);
             });
         }
+
+        // 初期描画
+        renderStageStats(currentDetailStageTab);
+
+        // タブクリックイベント
+        stageTab10Btn.onclick = () => {
+            if (currentDetailStageTab !== 10) renderStageStats(10);
+        };
+        stageTab50Btn.onclick = () => {
+            if (currentDetailStageTab !== 50) renderStageStats(50);
+        };
 
         // --- 相手ランキング処理 ---
         // 勝率で降順ソート
@@ -887,8 +1011,9 @@ document.addEventListener('DOMContentLoaded', () => {
         detailView.classList.remove('hidden');
         // 詳細画面を開くときは内訳表示をリセット
         activeBreakdownType = null;
+        activeStageBreakdownType = null;
         breakdownInlineContainer.classList.add('hidden');
-        detailStageStatsContainer.classList.add('hidden');
+        stageBreakdownContainer.classList.add('hidden');
         renderDetailStats(selectedPlayerId);
     }
 
@@ -913,10 +1038,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- 内訳インライン処理 ----
     function toggleBreakdown(type, games, title) {
+        // ステージ別勝率の内訳が開いていれば閉じる（排他制御）
+        stageBreakdownContainer.classList.add('hidden');
+        activeStageBreakdownType = null;
+
         // 同じボタンが押された場合は閉じる（トグル）
         if (activeBreakdownType === type) {
             breakdownInlineContainer.classList.add('hidden');
-            detailStageStatsContainer.classList.add('hidden');
             activeBreakdownType = null;
             return;
         }
@@ -1017,7 +1145,93 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         breakdownInlineContainer.classList.remove('hidden');
-        detailStageStatsContainer.classList.remove('hidden');
+    }
+
+    // ---- ステージ別内訳インライン処理（独立エリア） ----
+    function toggleStageBreakdown(stageId, games, title) {
+        // 同じステージボタンが押された場合は閉じる（トグル）
+        if (activeStageBreakdownType === stageId) {
+            stageBreakdownContainer.classList.add('hidden');
+            activeStageBreakdownType = null;
+            return;
+        }
+
+        // 違うボタンが押された（または初回）場合は更新して開く
+        activeStageBreakdownType = stageId;
+        stageBreakdownTitle.textContent = title;
+        stageBreakdownList.innerHTML = '';
+
+        if (games.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.textContent = 'データがありません。';
+            li.style.justifyContent = 'center';
+            stageBreakdownList.appendChild(li);
+        } else {
+            games.forEach((item) => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+
+                // 日付
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'history-date';
+                dateSpan.textContent = formatDisplayDate(item.d);
+
+                // 対戦相手
+                const oppName = characterList[item.opponentId];
+
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'ranking-img-wrapper breakdown-list-img';
+
+                const img = document.createElement('img');
+                img.src = `images/${oppName}.jpg`;
+                img.alt = oppName;
+                img.className = 'ranking-img';
+                img.addEventListener('load', () => { imgWrap.appendChild(img); });
+
+                const oppSpan = document.createElement('span');
+                oppSpan.className = 'ranking-name breakdown-list-name';
+                oppSpan.style.flexGrow = '1';
+                oppSpan.textContent = `vs ${oppName}`;
+
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'ranking-left-group';
+                leftDiv.appendChild(dateSpan);
+                leftDiv.appendChild(imgWrap);
+                leftDiv.appendChild(oppSpan);
+
+                // キャラ名クリックで勝敗記録画面へ遷移
+                leftDiv.style.cursor = 'pointer';
+                leftDiv.addEventListener('click', () => {
+                    cameFromDetailToMatch = true;
+                    detailView.classList.add('hidden');
+                    openMatchView(selectedPlayerId, item.opponentId);
+                });
+                leftDiv.addEventListener('mouseenter', () => { leftDiv.style.opacity = '0.7'; });
+                leftDiv.addEventListener('mouseleave', () => { leftDiv.style.opacity = '1'; });
+
+                // 勝敗（右側）
+                const rightDiv = document.createElement('div');
+                rightDiv.className = 'history-right';
+
+                const resultSpan = document.createElement('span');
+                if (item.r === 1) {
+                    resultSpan.className = 'history-result win';
+                    resultSpan.textContent = 'WIN';
+                } else {
+                    resultSpan.className = 'history-result loss';
+                    resultSpan.textContent = 'LOSE';
+                }
+                rightDiv.appendChild(resultSpan);
+
+                li.appendChild(leftDiv);
+                li.appendChild(rightDiv);
+                stageBreakdownList.appendChild(li);
+                autoShrinkText(oppSpan);
+            });
+        }
+
+        stageBreakdownContainer.classList.remove('hidden');
     }
     // ---- イベントリスナー設定 ----
 
