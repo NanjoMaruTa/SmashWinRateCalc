@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPhase = 'player'; // 'player' or 'opponent' or 'match' or 'ranking' or 'detail'
     let currentMatchKey = '';
     let currentRankingType = 10; // 10 or 50
-    let currentDetailStageTab = 50; // 詳細勝率画面のステージ別勝率タブ (10 or 50)
+    let currentDetailStageTab = 10; // 詳細勝率画面のステージ別勝率タブ (10 or 50)
     let cameFromRanking = false; // ランキングから詳細画面へ遷移したかどうかのフラグ
     let cameFromDetailToMatch = false; // 詳細画面から個別の勝負記録画面へ遷移したかどうかのフラグ
 
