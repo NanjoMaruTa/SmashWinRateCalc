@@ -883,7 +883,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const nameEl = document.createElement('div');
                 nameEl.className = 'stage-stat-name';
-                nameEl.textContent = isToday ? `${label}（本日）` : label;
+                nameEl.textContent = label;
+                if (isToday) {
+                    const todayBadge = document.createElement('span');
+                    todayBadge.className = 'daily-today-badge';
+                    todayBadge.textContent = '（本日）';
+                    nameEl.appendChild(todayBadge);
+                }
 
                 const rateEl = document.createElement('div');
                 if (games.length > 0) {

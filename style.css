@@ -727,6 +727,14 @@ body {
     grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+/* ほ本日）バッジ */
+.daily-today-badge {
+    display: inline;
+    font-size: 10px;
+    font-weight: normal;
+    color: #718096;
+}
+
 .stage-stat-card {
     display: flex;
     flex-direction: column;
@@ -928,8 +936,8 @@ body {
         font-size: 18px;
     }
 
-    /* モバイル: 日別勝率の「（本日）」ラベルを非表示（はみ出し防止） */
-    .today-label {
+    /* モバイル: 日別勝率の「（本日）」は非表示にする */
+    .daily-today-badge {
         display: none;
     }
 
