@@ -919,13 +919,18 @@ body {
         gap: 4px;
         padding: 4px;
     }
-
+    
     .stage-stat-card {
         padding: 8px 2px 20px 2px;
     }
-
+    
     .stage-stat-rate {
         font-size: 18px;
+    }
+
+    /* モバイル: 日別勝率の「（本日）」ラベルを非表示（はみ出し防止） */
+    .today-label {
+        display: none;
     }
 
     /* 詳細勝率画面・内訳リストの余白を縮小 */
