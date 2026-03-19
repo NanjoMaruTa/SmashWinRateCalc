@@ -67,6 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeBreakdownType = null; // '10' or '50' or null
     let activeMatchBreakdownType = null; // 勝敗記録画面用 '10' or '50' or null
 
+    // 日別勝率内訳用
+    const dailyBreakdownContainer = document.getElementById('daily-breakdown-inline-container');
+    const dailyBreakdownTitle = document.getElementById('daily-breakdown-title');
+    const dailyBreakdownList = document.getElementById('daily-breakdown-list');
+    const detailDailyStatsList = document.getElementById('detail-daily-stats-list');
+    let activeDailyBreakdownDate = null; // 現在表示中の日別内訳の日付key
+
     // ローディング画面用
     const loadingOverlay = document.getElementById('loading-overlay');
 
@@ -824,6 +831,99 @@ document.addEventListener('DOMContentLoaded', () => {
         // 50戦内訳ボタンイベント
         breakdown50Btn.onclick = () => toggleBreakdown('50', recent50, "直近50戦 内訳");
 
+        // --- 日別勝率処理 ---
+        function renderDailyStats() {
+            detailDailyStatsList.innerHTML = '';
+
+            // 全試合を日付ごとにグループ化
+            const dayMap = {}; // key: 'YYYY-MM-DD', value: { games: [], label: '3/19' }
+            allGames.forEach(g => {
+                if (typeof g.d !== 'number') return; // 旧形式は除外
+                const date = new Date(g.d);
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                const key = `${y}-${m}-${d}`;
+                if (!dayMap[key]) {
+                    dayMap[key] = {
+                        games: [],
+                        label: `${date.getMonth() + 1}/${date.getDate()}`
+                    };
+                }
+                dayMap[key].games.push(g);
+            });
+
+            // 本日の日付keyを生成
+            const today = new Date();
+            const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            // 本日のカードを用意（データなしでも必ず表示する）
+            if (!dayMap[todayKey]) {
+                dayMap[todayKey] = {
+                    games: [],
+                    label: `${today.getMonth() + 1}/${today.getDate()}`
+                };
+            }
+
+            // 本日以外の日付を新しい順にソートして最大4件取得
+            const otherDays = Object.keys(dayMap)
+                .filter(k => k !== todayKey)
+                .sort((a, b) => b.localeCompare(a))
+                .slice(0, 4);
+
+            // 表示対象を「本日」+「直近4日」の順で並べる
+            const displayDays = [todayKey, ...otherDays];
+
+            displayDays.forEach(key => {
+                const { games, label } = dayMap[key];
+                const isToday = key === todayKey;
+
+                const card = document.createElement('li');
+                card.className = 'stage-stat-card';
+
+                const nameEl = document.createElement('div');
+                nameEl.className = 'stage-stat-name';
+                nameEl.textContent = isToday ? `${label}（本日）` : label;
+
+                const rateEl = document.createElement('div');
+                if (games.length > 0) {
+                    const wins = games.filter(g => g.r === 1).length;
+                    const pct = Math.round((wins / games.length) * 100);
+                    rateEl.textContent = `${pct}%`;
+                    rateEl.className = 'stage-stat-rate';
+                } else {
+                    rateEl.textContent = '--';
+                    rateEl.className = 'stage-stat-rate no-data';
+                }
+
+                const detailEl = document.createElement('div');
+                detailEl.className = 'stage-stat-detail';
+                if (games.length > 0) {
+                    const wins = games.filter(g => g.r === 1).length;
+                    detailEl.textContent = `${wins}勝/${games.length}戦`;
+                } else {
+                    detailEl.textContent = 'データなし';
+                }
+
+                card.appendChild(nameEl);
+                card.appendChild(rateEl);
+                card.appendChild(detailEl);
+
+                // 内訳ボタン（試合データがある場合のみ表示）
+                if (games.length > 0) {
+                    const btn = document.createElement('button');
+                    btn.className = 'stage-breakdown-btn';
+                    btn.textContent = '内訳';
+                    btn.onclick = () => toggleDailyBreakdown(key, games, `${label} 内訳`);
+                    card.appendChild(btn);
+                }
+
+                detailDailyStatsList.appendChild(card);
+            });
+        }
+
+        renderDailyStats();
+
         // --- ステージ別勝率処理 ---
         function renderStageStats(limit) {
             currentDetailStageTab = limit;
@@ -1012,8 +1112,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // 詳細画面を開くときは内訳表示をリセット
         activeBreakdownType = null;
         activeStageBreakdownType = null;
+        activeDailyBreakdownDate = null;
         breakdownInlineContainer.classList.add('hidden');
         stageBreakdownContainer.classList.add('hidden');
+        dailyBreakdownContainer.classList.add('hidden');
         renderDetailStats(selectedPlayerId);
     }
 
@@ -1034,6 +1136,93 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPhase = 'opponent';
             rosterView.classList.remove('hidden');
         }
+    }
+
+    // ---- 日別内訳インライン処理 ----
+    function toggleDailyBreakdown(dateKey, games, title) {
+        // 同じ日付ボタンが押されたら閉じる（トグル）
+        if (activeDailyBreakdownDate === dateKey) {
+            dailyBreakdownContainer.classList.add('hidden');
+            activeDailyBreakdownDate = null;
+            return;
+        }
+
+        activeDailyBreakdownDate = dateKey;
+        dailyBreakdownTitle.textContent = title;
+        dailyBreakdownList.innerHTML = '';
+
+        games.forEach((item) => {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+
+            // 日付（時刻まで表示）
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'history-date';
+            dateSpan.textContent = formatDisplayDate(item.d);
+
+            // 対戦相手
+            const oppName = characterList[item.opponentId];
+
+            const imgWrap = document.createElement('div');
+            imgWrap.className = 'ranking-img-wrapper breakdown-list-img';
+
+            const img = document.createElement('img');
+            img.src = `images/${oppName}.jpg`;
+            img.alt = oppName;
+            img.className = 'ranking-img';
+            img.addEventListener('load', () => { imgWrap.appendChild(img); });
+
+            const oppSpan = document.createElement('span');
+            oppSpan.className = 'ranking-name breakdown-list-name';
+            oppSpan.style.flexGrow = '1';
+            oppSpan.textContent = `vs ${oppName}`;
+
+            const leftDiv = document.createElement('div');
+            leftDiv.className = 'ranking-left-group';
+            leftDiv.appendChild(dateSpan);
+            leftDiv.appendChild(imgWrap);
+            leftDiv.appendChild(oppSpan);
+
+            // キャラ名（左側グループ）クリックで勝敗記録画面へ遷移
+            leftDiv.style.cursor = 'pointer';
+            leftDiv.addEventListener('click', () => {
+                cameFromDetailToMatch = true;
+                detailView.classList.add('hidden');
+                openMatchView(selectedPlayerId, item.opponentId);
+            });
+
+            // ホバー時の視覚的フィードバック
+            leftDiv.addEventListener('mouseenter', () => { leftDiv.style.opacity = '0.7'; });
+            leftDiv.addEventListener('mouseleave', () => { leftDiv.style.opacity = '1'; });
+
+            const rightDiv = document.createElement('div');
+            rightDiv.className = 'history-right';
+
+            const resultSpan = document.createElement('span');
+            if (item.r === 1) {
+                resultSpan.className = 'history-result win';
+                resultSpan.textContent = 'WIN';
+            } else {
+                resultSpan.className = 'history-result loss';
+                resultSpan.textContent = 'LOSE';
+            }
+
+            // ステージ表示
+            const hasStage = item.s !== undefined && item.s !== '' && item.s !== null;
+            if (hasStage) {
+                const stageSpan = document.createElement('span');
+                stageSpan.className = 'history-stage';
+                stageSpan.textContent = formatStageName(item.s);
+                rightDiv.appendChild(stageSpan);
+            }
+            rightDiv.appendChild(resultSpan);
+
+            li.appendChild(leftDiv);
+            li.appendChild(rightDiv);
+            dailyBreakdownList.appendChild(li);
+        });
+
+        dailyBreakdownContainer.classList.remove('hidden');
     }
 
     // ---- 内訳インライン処理 ----
