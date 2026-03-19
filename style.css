@@ -722,6 +722,11 @@ body {
     overflow: visible;
 }
 
+/* 日別勝率グリッドは最大5枚（本日+4日分）なので5列固定にして折り返し禁止 */
+#detail-daily-stats-list {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .stage-stat-card {
     display: flex;
     flex-direction: column;
