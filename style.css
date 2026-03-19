@@ -879,11 +879,6 @@ body {
         /* 4列なのでテキストが読みやすいサイズに */
     }
 
-    .breakdown-inline-container {
-        padding: 8px;
-        /* 元は16px。これを減らすことで白いカードの領域が広がる */
-    }
-
     /* 見出しテキストと画像のサイズ縮小 */
     .vs-text {
         font-size: 16px;
