@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailRate10 = document.getElementById('detail-rate-10');
     const detailRate50 = document.getElementById('detail-rate-50');
     const detailRankingListEl = document.getElementById('detail-ranking-list');
+    const encounterRankingListEl = document.getElementById('encounter-ranking-list');
+    const encounterTotalLabel = document.getElementById('encounter-total-label');
     const detailStageRankingListEl = document.getElementById('detail-stage-ranking-list');
     const detailStageStatsContainer = document.getElementById('detail-stage-stats-container');
     const stageTab10Btn = document.getElementById('stage-tab-10-btn');
@@ -1106,6 +1108,105 @@ document.addEventListener('DOMContentLoaded', () => {
                 li.appendChild(rightDiv);
 
                 detailRankingListEl.appendChild(li);
+                autoShrinkText(nameSpan);
+            });
+        }
+
+        // --- 遷遇率ランキング処理 ---
+        encounterRankingListEl.innerHTML = '';
+
+        // 直近00戦を取得（allGamesは既に最新順にソート済み）
+        const recent100 = allGames.slice(0, 100);
+        const encounterTotal = recent100.length;
+        encounterTotalLabel.textContent = `（直近${encounterTotal}戦）`;
+
+        // キャラごとの遷遇数をカウント
+        const encounterCount = {};
+        characterList.forEach((_, id) => { encounterCount[id] = 0; });
+        recent100.forEach(g => {
+            if (g.opponentId !== undefined && encounterCount[g.opponentId] !== undefined) {
+                encounterCount[g.opponentId]++;
+            }
+        });
+
+        if (encounterTotal === 0) {
+            const emptyLi = document.createElement('li');
+            emptyLi.className = 'history-item';
+            emptyLi.textContent = '対戦データがありません。';
+            emptyLi.style.justifyContent = 'center';
+            encounterRankingListEl.appendChild(emptyLi);
+        } else {
+            // 遷遇数の降順でソート
+            const sortedEncounter = Object.entries(encounterCount).sort(([, a], [, b]) => b - a);
+
+            sortedEncounter.forEach(([idStr, count], index) => {
+                const oppId = parseInt(idStr);
+                const oppName = characterList[oppId];
+                const li = document.createElement('li');
+                li.className = 'ranking-item';
+
+                const rankSpan = document.createElement('span');
+                rankSpan.className = 'ranking-rank';
+                rankSpan.textContent = `${index + 1}位`;
+
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'ranking-img-wrapper';
+                const img = document.createElement('img');
+                img.src = `images/${oppName}.jpg`;
+                img.alt = oppName;
+                img.className = 'ranking-img';
+                img.addEventListener('load', () => { imgWrap.appendChild(img); });
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'ranking-name';
+                nameSpan.textContent = oppName;
+
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'ranking-left-group';
+                leftDiv.appendChild(rankSpan);
+                leftDiv.appendChild(imgWrap);
+                leftDiv.appendChild(nameSpan);
+
+                // クリックで勝敗記録画面へ遷移
+                leftDiv.style.cursor = 'pointer';
+                leftDiv.addEventListener('click', () => {
+                    cameFromDetailToMatch = true;
+                    detailView.classList.add('hidden');
+                    openMatchView(selectedPlayerId, oppId);
+                });
+                leftDiv.addEventListener('mouseenter', () => { leftDiv.style.opacity = '0.7'; });
+                leftDiv.addEventListener('mouseleave', () => { leftDiv.style.opacity = '1'; });
+
+                const rightDiv = document.createElement('div');
+                rightDiv.style.display = 'flex';
+                rightDiv.style.alignItems = 'baseline';
+
+                if (count > 0) {
+                    const pct = ((count / encounterTotal) * 100).toFixed(2);
+                    const rateSpan = document.createElement('span');
+                    rateSpan.className = 'ranking-rate';
+                    rateSpan.style.color = '#3182ce'; // 遷遇率は青色
+                    rateSpan.textContent = `${pct}%`;
+
+                    const detailSpan = document.createElement('span');
+                    detailSpan.style.fontSize = '12px';
+                    detailSpan.style.color = '#718096';
+                    detailSpan.style.marginLeft = '8px';
+                    detailSpan.textContent = `(${count}/${encounterTotal})`;
+
+                    rightDiv.appendChild(rateSpan);
+                    rightDiv.appendChild(detailSpan);
+                } else {
+                    const noDataSpan = document.createElement('span');
+                    noDataSpan.style.fontSize = '12px';
+                    noDataSpan.style.color = '#a0aec0';
+                    noDataSpan.textContent = '遷遇なし';
+                    rightDiv.appendChild(noDataSpan);
+                }
+
+                li.appendChild(leftDiv);
+                li.appendChild(rightDiv);
+                encounterRankingListEl.appendChild(li);
                 autoShrinkText(nameSpan);
             });
         }
