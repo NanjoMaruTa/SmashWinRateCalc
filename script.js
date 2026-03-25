@@ -964,7 +964,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (typeof sId === 'string') {
                     sId = STAGE_ID_MAP[sId] ?? 0;
                 }
-                
+
                 // そのステージの集計が上限に達していなければカウントし、履歴に追加
                 if (stageStats[sId] && stageStats[sId].total < limit) {
                     stageStats[sId].total++;
@@ -1115,8 +1115,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 遷遇率ランキング処理 ---
         encounterRankingListEl.innerHTML = '';
 
-        // 直近00戦を取得（allGamesは既に最新順にソート済み）
-        const recent100 = allGames.slice(0, 100);
+        // 直近00戦を取得（allGamesは既に最新順にソート済み）200戦に修正した
+        const recent100 = allGames.slice(0, 200);
         const encounterTotal = recent100.length;
         encounterTotalLabel.textContent = `（直近${encounterTotal}戦）`;
 
@@ -1136,8 +1136,11 @@ document.addEventListener('DOMContentLoaded', () => {
             emptyLi.style.justifyContent = 'center';
             encounterRankingListEl.appendChild(emptyLi);
         } else {
-            // 遷遇数の降順でソート
-            const sortedEncounter = Object.entries(encounterCount).sort(([, a], [, b]) => b - a);
+            // 遷遇数の降順でソート（「詳細勝率 / 全キャラ勝率」はボタン用のドミーなので除外）
+            const dummyCharId = characterList.length - 1;
+            const sortedEncounter = Object.entries(encounterCount)
+                .filter(([idStr]) => parseInt(idStr) !== dummyCharId)
+                .sort(([, a], [, b]) => b - a);
 
             sortedEncounter.forEach(([idStr, count], index) => {
                 const oppId = parseInt(idStr);
