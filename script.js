@@ -1115,8 +1115,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 遷遇率ランキング処理 ---
         encounterRankingListEl.innerHTML = '';
 
-        // 直近00戦を取得（allGamesは既に最新順にソート済み）200戦に修正した
-        const recent100 = allGames.slice(0, 200);
+        // 直近00戦を取得（allGamesは既に最新順にソート済み）300戦に修正した
+        const recent100 = allGames.slice(0, 300);
         const encounterTotal = recent100.length;
         encounterTotalLabel.textContent = `（直近${encounterTotal}戦）`;
 
